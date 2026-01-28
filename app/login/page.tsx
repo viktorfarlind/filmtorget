@@ -13,12 +13,11 @@ export default function LoginPage() {
   useEffect(() => {
     setIsMounted(true);
 
-    
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
       if (session) {
-        router.push("/"); 
+        router.push("/");
       }
     });
 
@@ -31,7 +30,7 @@ export default function LoginPage() {
     <div className="flex min-h-[80vh] flex-col items-center justify-center p-4">
       <div className="w-full max-w-md rounded-xl border bg-white p-8 shadow-sm">
         <h1 className="mb-6 text-center text-2xl font-bold text-slate-900">
-          Välkommen till Filmtorget
+          Välkommen till Filmtorget!
         </h1>
 
         <Auth
@@ -41,13 +40,13 @@ export default function LoginPage() {
             variables: {
               default: {
                 colors: {
-                  brand: "#2563eb", 
+                  brand: "#2563eb",
                   brandAccent: "#1d4ed8",
                 },
               },
             },
             className: {
-              button: "rounded-full px-4 py-2", 
+              button: "rounded-full px-4 py-2",
               input: "rounded-lg border-slate-300",
             },
           }}
@@ -62,11 +61,11 @@ export default function LoginPage() {
                 email_label: "E-postadress",
                 password_label: "Välj ett lösenord",
                 button_label: "Skapa konto",
-                link_text: "Har du inget konto? Registrera dig",
+                link_text: "Har du inget konto? Registrera dig! :)",
               },
             },
           }}
-          providers={[]} 
+          providers={[]}
           theme="light"
         />
       </div>
