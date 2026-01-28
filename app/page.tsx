@@ -1,65 +1,134 @@
-import Image from "next/image";
+import Link from "next/link";
+import { Disc, Clapperboard, Sparkles } from "lucide-react";
+import { supabase } from "@/utils/supabaseClient";
+import AdCard from "@/components/AdCard";
+import HeroSection from "@/components/HeroSection";
+import SortSelect from "@/components/SortSelect";
 
-export default function Home() {
+export const dynamic = "force-dynamic";
+
+type Props = {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+};
+
+export default async function Home(props: Props) {
+  const searchParams = await props.searchParams;
+
+  const formatFilter =
+    typeof searchParams.format === "string" ? searchParams.format : null;
+  const searchQuery =
+    typeof searchParams.q === "string" ? searchParams.q : null;
+  const sortOption =
+    typeof searchParams.sort === "string" ? searchParams.sort : "newest";
+
+  const { data: latestAdsData } = await supabase
+    .from("ads")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(10);
+
+  const latestAds = latestAdsData || [];
+
+  let query = supabase.from("ads").select("*");
+
+  if (formatFilter) query = query.eq("format", formatFilter);
+  if (searchQuery) query = query.ilike("title", `%${searchQuery}%`);
+
+  switch (sortOption) {
+    case "price_asc":
+      query = query.order("price", { ascending: true });
+      break;
+    case "price_desc":
+      query = query.order("price", { ascending: false });
+      break;
+    case "newest":
+    default:
+      query = query.order("created_at", { ascending: false });
+      break;
+  }
+
+  const { data: mainListAds } = await query;
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="flex flex-col gap-12 pb-24 bg-slate-50 min-h-screen">
+      <HeroSection />
+
+      <section className="-mt-6 relative z-10 space-y-6">
+        <div className="text-center px-4">
+          <div className="inline-flex items-center gap-2 bg-white/80 backdrop-blur px-4 py-1.5 rounded-full shadow-sm border border-blue-100 mb-2">
+            <Sparkles className="h-4 w-4 text-blue-600 fill-blue-600" />
+            <span className="text-xs font-bold text-blue-900 uppercase tracking-wide">
+              Nyinkommet
+            </span>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+        <div className="relative w-full">
+          <div className="md:hidden w-full relative">
+            <div className="flex overflow-x-auto gap-4 px-4 snap-x snap-mandatory scrollbar-hide pb-4">
+              {latestAds.map((ad, index) => (
+                <div
+                  key={`mob-${ad.id}-${index}`}
+                  className="w-40 shrink-0 snap-center transition-transform active:scale-95"
+                >
+                  <AdCard ad={ad} />
+                </div>
+              ))}
+
+              <div className="w-2 shrink-0" />
+            </div>
+
+            <div className="absolute top-0 left-0 h-full w-6 bg-linear-to-r from-slate-50 to-transparent z-10 pointer-events-none" />
+            <div className="absolute top-0 right-0 h-full w-6 bg-linear-to-l from-slate-50 to-transparent z-10 pointer-events-none" />
+          </div>
+
+          <div className="hidden md:flex w-full overflow-x-auto pb-8 pt-4 px-8 scrollbar-hide">
+            <div className="flex gap-6 mx-auto">
+              {latestAds.map((ad) => (
+                <div
+                  key={`desk-${ad.id}`}
+                  className="w-50 shrink-0 transition-transform hover:-translate-y-2 duration-300"
+                >
+                  <AdCard ad={ad} />
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
-      </main>
+      </section>
+
+      <section className="px-4 max-w-6xl mx-auto w-full border-t border-slate-200 pt-12">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-8">
+          <div>
+            <h2 className="font-bold text-2xl text-slate-900 flex items-center gap-2">
+              <Clapperboard
+                className="h-6 w-6 text-slate-700"
+                strokeWidth={2}
+              />
+              {formatFilter ? `${formatFilter}-filmer` : "Alla filmer"}
+            </h2>
+            <p className="text-slate-500 text-sm mt-1">
+              Visar {mainListAds?.length || 0} filmer
+            </p>
+          </div>
+          <SortSelect />
+        </div>
+
+        {!mainListAds || mainListAds.length === 0 ? (
+          <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-slate-300 mx-2">
+            <div className="inline-flex bg-slate-50 p-4 rounded-full mb-4">
+              <Disc className="h-8 w-8 text-slate-300" strokeWidth={1} />
+            </div>
+            <p className="text-slate-900 font-medium">Inga träffar hittades</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-y-8 gap-x-4 sm:gap-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+            {mainListAds.map((ad) => (
+              <AdCard key={ad.id} ad={ad} />
+            ))}
+          </div>
+        )}
+      </section>
     </div>
   );
 }
