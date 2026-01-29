@@ -13,7 +13,6 @@ import {
   Star,
 } from "lucide-react";
 import Link from "next/link";
-import { v4 as uuidv4 } from "uuid";
 
 export default function ChatPage() {
   const { id: conversationId } = useParams();
@@ -82,7 +81,6 @@ export default function ChatPage() {
         setMessages(msgs || []);
         setLoading(false);
 
-        // Realtime prenumeration
         const channel = supabase
           .channel(`chat:${conversationId}`)
           .on(
@@ -96,7 +94,6 @@ export default function ChatPage() {
             async (payload) => {
               const msg = payload.new;
               setMessages((prev) => {
-                // Förhindra dubbletter om vi redan lagt till meddelandet via sendMessage
                 if (prev.some((m) => m.id === msg.id)) return prev;
                 return [...prev, msg];
               });
@@ -114,7 +111,7 @@ export default function ChatPage() {
         return () => {
           supabase.removeChannel(channel);
         };
-      } catch (err) {
+      } catch {
         setError("Ett oväntat fel uppstod");
       }
     };
@@ -183,7 +180,6 @@ export default function ChatPage() {
     if (error) {
       alert("Kunde inte skicka");
     } else if (data) {
-      // Optimistisk uppdatering: Lägg till meddelandet direkt i state
       setMessages((prev) => {
         if (prev.some((m) => m.id === data.id)) return prev;
         return [...prev, data];
@@ -227,7 +223,7 @@ export default function ChatPage() {
       : conversation.buyer;
 
   return (
-    <div className="fixed inset-0 top-16 z-[100] flex flex-col bg-white overflow-hidden font-sans">
+    <div className="fixed inset-0 top-16 z-100 flex flex-col bg-white overflow-hidden font-sans">
       <div className="flex-1 flex flex-col max-w-4xl w-full mx-auto bg-white border-x border-slate-200 overflow-hidden relative shadow-2xl">
         <header className="bg-white border-b border-slate-200 p-4 flex items-center justify-between z-20">
           <div className="flex items-center gap-4 min-w-0">
