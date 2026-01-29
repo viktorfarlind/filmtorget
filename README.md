@@ -1,36 +1,47 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+_Filmtorget_
 
-## Getting Started
+En nischad C2C-marknadsplats för fysisk samlarfilm, utvecklad som examensarbete inom Frontendutveckling.
 
-First, run the development server:
+_Live Demo_
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+Applikationen är driftsatt och kan testas här: https://filmtorget-wxyh.vercel.app/
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+_Projektbeskrivning_
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Filmtorget är skapat för att lösa problemet med att specifik metadata för samlarfilm ofta saknas på generella köp- och säljsajter. Applikationen låter användare kategorisera annonser baserat på regionskoder, utgåvor (exempelvis Steelbooks) och specifika filmformat.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+_Funktioner_
 
-## Learn More
+Metadata för samlare: Möjlighet att filtrera och sortera på egenskaper som är unika för fysisk film.
 
-To learn more about Next.js, take a look at the following resources:
+Realtidskommunikation: Integrerad chattfunktion för direktkontakt mellan köpare och säljare.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Profilsystem: Hantering av personliga annonser, verifiering och omdömen från tidigare transaktioner.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Tillgänglighet: Utvecklad enligt WCAG 2.1 nivå AA med fokus på semantisk HTML och fullständig tangentbordsnavigering.
 
-## Deploy on Vercel
+_Teknisk stack_
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Framework: Next.js 15 (App Router)
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Styling: Tailwind CSS
+
+Backend: Supabase (Databas, Auth, Storage och Realtime)
+
+Ikonbibliotek: Lucide React
+
+_Installation och lokal körning_
+
+1. Klona arkivet till din lokala maskin.
+
+2. Installera nödvändiga beroenden: npm install
+
+3. Konfigurera miljövariabler i en .env.local-fil:
+   NEXT_PUBLIC_SUPABASE_URL=din_url
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=din_nyckel
+
+4. Starta utvecklingsservern: npm run dev
+
+_Kravuppfyllnad_
+
+Projektet uppfyller kraven i den ursprungliga projektplanen gällande CRUD-funktionalitet för annonser, användarautentisering, sökfunktioner och realtidschatt. Arbetet har lagt stor vikt vid att kombinera funktionella krav med hög kodkvalitet och tillgänglighet.
