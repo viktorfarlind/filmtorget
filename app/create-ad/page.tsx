@@ -19,11 +19,12 @@ import {
 import { v4 as uuidv4 } from "uuid";
 import Link from "next/link";
 import Image from "next/image";
+import { User } from "@supabase/supabase-js";
 
 export default function CreateAdPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
 
   const [title, setTitle] = useState("");
   const [price, setPrice] = useState("");
@@ -87,8 +88,9 @@ export default function CreateAdPage() {
 
       router.push("/");
       router.refresh();
-    } catch (error: any) {
-      alert("Fel: " + error.message);
+    } catch (error) {
+      const err = error as Error;
+      alert("Fel: " + err.message);
     } finally {
       setLoading(false);
     }
