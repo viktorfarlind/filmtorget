@@ -50,7 +50,7 @@ export default function AdOwnerControls({
 
       setIsSold(!isSold);
       router.refresh();
-    } catch (error) {
+    } catch {
       alert("Kunde inte uppdatera annonsens status.");
     } finally {
       setIsUpdating(false);
@@ -70,7 +70,7 @@ export default function AdOwnerControls({
 
       router.push("/");
       router.refresh();
-    } catch (error) {
+    } catch {
       alert("Kunde inte ta bort annonsen.");
       setIsDeleting(false);
     }
