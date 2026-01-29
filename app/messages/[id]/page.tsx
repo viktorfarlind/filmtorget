@@ -4,7 +4,13 @@ import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/utils/supabaseClient";
 import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
-import { Send, ArrowLeft, Loader2, User as UserIcon } from "lucide-react";
+import {
+  Send,
+  ArrowLeft,
+  Loader2,
+  User as UserIcon,
+  CheckCircle2,
+} from "lucide-react";
 import Link from "next/link";
 
 export default function ChatPage() {
@@ -15,6 +21,7 @@ export default function ChatPage() {
   const [conversation, setConversation] = useState<any>(null);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false); // Ny state för att hantera laddning vid skicka
   const [error, setError] = useState<string | null>(null);
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -38,9 +45,9 @@ export default function ChatPage() {
           .select(
             `
             *,
-            ad:ads(title, image_url, price),
-            buyer:profiles!conversations_buyer_id_fkey(username, avatar_url),
-            seller:profiles!conversations_seller_id_fkey(username, avatar_url)
+            ad:ads(id, title, image_url, price, is_sold, user_id),
+            buyer:profiles!conversations_buyer_id_fkey(id, username, avatar_url),
+            seller:profiles!conversations_seller_id_fkey(id, username, avatar_url)
           `
           )
           .eq("id", conversationId)
@@ -109,17 +116,36 @@ export default function ChatPage() {
     }
   }, [messages, loading]);
 
+  const markAsSold = async () => {
+    if (!window.confirm("Vill du markera denna film som såld?")) return;
+
+    const { error } = await supabase
+      .from("ads")
+      .update({ is_sold: true })
+      .eq("id", conversation.ad.id);
+
+    if (error) {
+      alert("Kunde inte uppdatera annonsen.");
+    } else {
+      setConversation({
+        ...conversation,
+        ad: { ...conversation.ad, is_sold: true },
+      });
+    }
+  };
+
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newMessage.trim() || !currentUser) return;
+    if (!newMessage.trim() || !currentUser || sending) return;
 
+    setSending(true);
     const content = newMessage;
     setNewMessage("");
 
     const tempId = Math.random().toString();
     const tempMessage = {
       id: tempId,
-      content: content,
+      content,
       sender_id: currentUser.id,
       conversation_id: conversationId,
       created_at: new Date().toISOString(),
@@ -133,7 +159,7 @@ export default function ChatPage() {
       .insert({
         conversation_id: conversationId,
         sender_id: currentUser.id,
-        content: content,
+        content,
         is_read: false,
       })
       .select()
@@ -145,15 +171,16 @@ export default function ChatPage() {
     } else {
       setMessages((prev) => prev.map((m) => (m.id === tempId ? data : m)));
     }
+    setSending(false);
   };
 
   if (error)
     return (
-      <div className="h-[calc(100vh-64px)] flex flex-col items-center justify-center p-4">
+      <div className="h-[calc(100vh-64px)] flex flex-col items-center justify-center p-4 bg-white">
         <p className="text-red-500 font-bold mb-4">{error}</p>
         <Link
           href="/messages"
-          className="bg-slate-900 text-white px-6 py-2 rounded-full text-sm font-bold"
+          className="bg-slate-900 text-white px-6 py-2 rounded-full text-sm font-bold cursor-pointer"
         >
           Tillbaka
         </Link>
@@ -167,6 +194,7 @@ export default function ChatPage() {
       </div>
     );
 
+  const isSeller = currentUser?.id === conversation.ad.user_id;
   const otherUser =
     currentUser?.id === conversation.buyer_id
       ? conversation.seller
@@ -175,34 +203,62 @@ export default function ChatPage() {
   return (
     <div className="fixed inset-0 top-16 flex flex-col bg-slate-50 overflow-hidden">
       <div className="flex-1 flex flex-col max-w-4xl w-full mx-auto bg-white border-x border-slate-200 overflow-hidden relative">
-      
-        <div className="bg-white border-b border-slate-100 p-4 flex items-center gap-4 z-20">
-          <Link
-            href="/messages"
-            className="p-2 hover:bg-slate-100 rounded-full transition-colors"
-          >
-            <ArrowLeft className="h-5 w-5 text-slate-600" />
-          </Link>
-          <div className="h-10 w-10 rounded-full bg-slate-100 relative overflow-hidden flex-shrink-0 border border-slate-200">
-            {otherUser?.avatar_url ? (
-              <Image
-                src={otherUser.avatar_url}
-                alt=""
-                fill
-                className="object-cover"
-              />
-            ) : (
-              <UserIcon className="p-2 text-slate-400" />
-            )}
+        <div className="bg-white border-b border-slate-100 p-4 flex items-center justify-between z-20">
+          <div className="flex items-center gap-4 min-w-0">
+            <Link
+              href="/messages"
+              className="p-2 hover:bg-slate-100 rounded-full transition-colors flex-shrink-0 cursor-pointer"
+            >
+              <ArrowLeft className="h-5 w-5 text-slate-600" />
+            </Link>
+            <Link
+              href={`/users/${otherUser?.id}`}
+              className="h-10 w-10 rounded-full bg-slate-100 relative overflow-hidden flex-shrink-0 border border-slate-200 hover:opacity-80 transition-opacity cursor-pointer"
+            >
+              {otherUser?.avatar_url ? (
+                <Image
+                  src={otherUser.avatar_url}
+                  alt=""
+                  fill
+                  className="object-cover"
+                />
+              ) : (
+                <UserIcon className="p-2 text-slate-400" />
+              )}
+            </Link>
+            <div className="min-w-0">
+              <Link
+                href={`/users/${otherUser?.id}`}
+                className="hover:underline decoration-blue-500 underline-offset-2 transition-all cursor-pointer"
+              >
+                <h2 className="font-bold text-slate-900 truncate leading-tight">
+                  {otherUser?.username || "Användare"}
+                </h2>
+              </Link>
+              <div className="flex items-center gap-2">
+                <Link
+                  href={`/ads/${conversation.ad?.id}`}
+                  className="text-[11px] text-slate-500 truncate font-medium uppercase tracking-tighter hover:text-blue-600 transition-colors cursor-pointer"
+                >
+                  Film: {conversation.ad?.title}
+                </Link>
+                {conversation.ad?.is_sold && (
+                  <span className="bg-emerald-100 text-emerald-700 text-[9px] font-black px-1.5 py-0.5 rounded flex items-center gap-0.5">
+                    <CheckCircle2 className="h-2 w-2" /> SÅLD
+                  </span>
+                )}
+              </div>
+            </div>
           </div>
-          <div className="flex-1 min-w-0">
-            <h2 className="font-bold text-slate-900 truncate leading-tight">
-              {otherUser?.username || "Användare"}
-            </h2>
-            <p className="text-[11px] text-slate-500 truncate font-medium uppercase tracking-tighter">
-              Film: {conversation.ad?.title}
-            </p>
-          </div>
+
+          {isSeller && !conversation.ad?.is_sold && (
+            <button
+              onClick={markAsSold}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-black px-3 py-2 rounded-lg transition-all shadow-sm active:scale-95 flex-shrink-0 cursor-pointer"
+            >
+              MARKERA SÅLD
+            </button>
+          )}
         </div>
 
         <div
@@ -257,9 +313,14 @@ export default function ChatPage() {
             />
             <button
               type="submit"
-              className="bg-blue-600 text-white p-3.5 rounded-2xl hover:bg-blue-700 transition-all active:scale-90 shadow-lg shadow-blue-600/20"
+              disabled={sending || !newMessage.trim()}
+              className="bg-blue-600 text-white p-3.5 rounded-2xl hover:bg-blue-700 transition-all active:scale-90 shadow-lg shadow-blue-600/20 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100"
             >
-              <Send className="h-5 w-5" />
+              {sending ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : (
+                <Send className="h-5 w-5" />
+              )}
             </button>
           </form>
         </div>
