@@ -1,4 +1,3 @@
-// 1. TA BORT "use client" - Detta bör vara en Server Component för SEO och prestanda
 import { Disc, Clapperboard, Sparkles } from "lucide-react";
 import { supabase } from "@/utils/supabaseClient";
 import AdCard from "@/components/AdCard";
@@ -11,9 +10,8 @@ type Props = {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 };
 
-// 2. Behåll async här (det fungerar eftersom det nu är en Server Component)
 export default async function Home(props: Props) {
-  const searchParams = await props.searchParams; // Vänta på params (krav i Next 15)
+  const searchParams = await props.searchParams;
 
   const formatFilter =
     typeof searchParams.format === "string" ? searchParams.format : null;
@@ -22,7 +20,6 @@ export default async function Home(props: Props) {
   const sortOption =
     typeof searchParams.sort === "string" ? searchParams.sort : "newest";
 
-  // Hämta nyinkommet
   const { data: latestAdsData } = await supabase
     .from("ads")
     .select("*")
@@ -32,7 +29,6 @@ export default async function Home(props: Props) {
 
   const latestAds = latestAdsData || [];
 
-  // Bygg sökfrågan för huvudlistan
   let query = supabase.from("ads").select("*").eq("is_sold", false);
 
   if (formatFilter) query = query.eq("format", formatFilter);
@@ -43,7 +39,6 @@ export default async function Home(props: Props) {
     );
   }
 
-  // Sortering
   switch (sortOption) {
     case "price_asc":
       query = query.order("price", { ascending: true });
@@ -84,29 +79,27 @@ export default async function Home(props: Props) {
           </div>
 
           <div className="relative w-full">
-            {/* Mobil-karusell */}
             <div className="md:hidden w-full relative">
               <div className="flex overflow-x-auto gap-4 px-4 snap-x snap-mandatory scrollbar-hide pb-4">
-                {latestAds.map((ad) => (
+                {latestAds.map((ad, index) => (
                   <div
                     key={`mob-${ad.id}`}
                     className="w-40 shrink-0 snap-center transition-transform active:scale-95"
                   >
-                    <AdCard ad={ad} />
+                    <AdCard ad={ad} priority={index < 4} />
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* Desktop-vy */}
             <div className="hidden md:flex w-full overflow-x-auto pb-8 pt-4 px-8 scrollbar-hide">
               <div className="flex gap-6 mx-auto">
-                {latestAds.map((ad) => (
+                {latestAds.map((ad, index) => (
                   <div
                     key={`desk-${ad.id}`}
                     className="w-48 shrink-0 transition-transform hover:-translate-y-2 duration-300"
                   >
-                    <AdCard ad={ad} />
+                    <AdCard ad={ad} priority={index < 4} />
                   </div>
                 ))}
               </div>
