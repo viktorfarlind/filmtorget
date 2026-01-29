@@ -66,24 +66,21 @@ export default function ProfilePage() {
 
       const fileExt = file.name.split(".").pop();
       const fileName = `${user.id}/${uuidv4()}.${fileExt}`;
-      const filePath = `${fileName}`;
 
       const { error: uploadError } = await supabase.storage
         .from("avatars")
-        .upload(filePath, file, { upsert: true });
+        .upload(fileName, file, { upsert: true });
 
       if (uploadError) throw uploadError;
 
       const {
         data: { publicUrl },
-      } = supabase.storage.from("avatars").getPublicUrl(filePath);
+      } = supabase.storage.from("avatars").getPublicUrl(fileName);
 
-      const { error: updateError } = await supabase
+      await supabase
         .from("profiles")
         .update({ avatar_url: publicUrl })
         .eq("id", user.id);
-
-      if (updateError) throw updateError;
 
       setProfile({ ...profile, avatar_url: publicUrl });
       router.refresh();
@@ -107,6 +104,9 @@ export default function ProfilePage() {
       </div>
     );
   }
+
+  const soldAdsCount = myAds.filter((ad) => ad.is_sold).length;
+  const activeAdsCount = myAds.filter((ad) => !ad.is_sold).length;
 
   return (
     <div className="min-h-screen bg-slate-50 pb-24">
@@ -134,11 +134,7 @@ export default function ProfilePage() {
               </div>
 
               <label className="absolute bottom-0 right-0 bg-blue-600 p-2.5 rounded-full text-white shadow-lg cursor-pointer hover:bg-blue-700 transition-colors border-2 border-white z-30">
-                {profile?.avatar_url ? (
-                  <Pencil className="h-4 w-4" />
-                ) : (
-                  <Camera className="h-4 w-4" />
-                )}
+                <Pencil className="h-4 w-4" />
                 <input
                   type="file"
                   accept="image/*"
@@ -176,15 +172,15 @@ export default function ProfilePage() {
             <div className="flex gap-10 border-t md:border-t-0 md:border-l border-slate-100 pt-6 md:pt-0 md:pl-10 mt-6 md:mt-0">
               <div className="text-center">
                 <span className="block text-3xl font-extrabold text-slate-900">
-                  {myAds.length}
+                  {activeAdsCount}
                 </span>
                 <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">
-                  Annonser
+                  Aktiva
                 </span>
               </div>
               <div className="text-center">
-                <span className="block text-3xl font-extrabold text-slate-900">
-                  0
+                <span className="block text-3xl font-extrabold text-emerald-600">
+                  {soldAdsCount}
                 </span>
                 <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">
                   Sålda
@@ -200,9 +196,7 @@ export default function ProfilePage() {
           <div className="p-2 bg-slate-200 rounded-lg">
             <Package className="h-5 w-5 text-slate-600" />
           </div>
-          <h2 className="text-xl font-bold text-slate-900">
-            Dina filmer till salu
-          </h2>
+          <h2 className="text-xl font-bold text-slate-900">Mina annonser</h2>
         </div>
 
         {myAds.length === 0 ? (
@@ -226,7 +220,21 @@ export default function ProfilePage() {
         ) : (
           <div className="grid grid-cols-2 gap-4 sm:gap-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
             {myAds.map((ad) => (
-              <AdCard key={ad.id} ad={ad} />
+              <div
+                key={ad.id}
+                className={`relative transition-all ${
+                  ad.is_sold ? "grayscale opacity-50" : ""
+                }`}
+              >
+                <AdCard ad={ad} />
+                {ad.is_sold && (
+                  <div className="absolute inset-0 bg-slate-900/40 flex items-center justify-center rounded-2xl pointer-events-none">
+                    <span className="text-[10px] sm:text-xs bg-white text-slate-900 font-black px-2 py-1 rounded shadow-sm rotate-[-10deg] uppercase">
+                      Såld
+                    </span>
+                  </div>
+                )}
+              </div>
             ))}
           </div>
         )}
