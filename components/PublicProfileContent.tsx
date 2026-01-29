@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect } from "react";
 import AdCard from "./AdCard";
 import Image from "next/image";
+import Link from "next/link"; 
 import {
   Search,
   Filter,
@@ -213,7 +214,7 @@ export default function PublicProfileContent({
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-6 gap-y-12">
+              <div className="grid grid-cols-2 gap-y-12 gap-x-4 sm:gap-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
                 {processedAds.map((ad) => (
                   <div
                     key={ad.id}
@@ -265,8 +266,11 @@ export default function PublicProfileContent({
                       className="bg-slate-50 p-6 rounded-[2rem] border-2 border-slate-100 transition-all hover:border-blue-200"
                     >
                       <div className="flex items-start justify-between mb-4">
-                        <div className="flex items-center gap-3">
-                          <div className="h-12 w-12 rounded-full bg-white border-2 border-slate-200 overflow-hidden relative shadow-sm">
+                        <Link
+                          href={`/users/${review.reviewer_id}`}
+                          className="flex items-center gap-3 group focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-full pr-4"
+                        >
+                          <div className="h-12 w-12 rounded-full bg-white border-2 border-slate-200 overflow-hidden relative shadow-sm group-hover:border-blue-400 transition-colors">
                             {review.reviewer?.avatar_url ? (
                               <Image
                                 src={review.reviewer.avatar_url}
@@ -282,7 +286,7 @@ export default function PublicProfileContent({
                             )}
                           </div>
                           <div>
-                            <p className="font-black text-slate-950 uppercase italic tracking-tighter">
+                            <p className="font-black text-slate-950 uppercase italic tracking-tighter group-hover:text-blue-600 transition-colors">
                               {review.reviewer?.username || "Användare"}
                             </p>
                             <div
@@ -302,7 +306,8 @@ export default function PublicProfileContent({
                               ))}
                             </div>
                           </div>
-                        </div>
+                        </Link>
+
                         <time
                           dateTime={review.created_at}
                           className="text-[10px] font-black text-slate-500 uppercase tracking-widest bg-white px-3 py-1 rounded-full border border-slate-200"
