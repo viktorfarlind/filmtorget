@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from "react";
 import AdCard from "./AdCard";
 import Image from "next/image";
-import Link from "next/link"; 
+import Link from "next/link";
 import {
   Search,
   Filter,
@@ -12,23 +12,28 @@ import {
   Star,
   LayoutGrid,
   MessageSquare,
-  User,
+  User as UserIcon,
   ChevronDown,
 } from "lucide-react";
 import { supabase } from "@/utils/supabaseClient";
+import { Ad, Review, Profile } from "@/types/database";
+
+interface ReviewWithProfile extends Review {
+  reviewer?: Pick<Profile, "id" | "username" | "avatar_url">;
+}
 
 export default function PublicProfileContent({
   initialAds,
   userId,
 }: {
-  initialAds: any[];
+  initialAds: Ad[];
   userId: string;
 }) {
   const [activeTab, setActiveTab] = useState<"ads" | "reviews">("ads");
   const [searchTerm, setSearchTerm] = useState("");
   const [formatFilter, setFormatFilter] = useState("Alla");
   const [sortBy, setSortBy] = useState("newest");
-  const [reviews, setReviews] = useState<any[]>([]);
+  const [reviews, setReviews] = useState<ReviewWithProfile[]>([]);
 
   useEffect(() => {
     const fetchReviews = async () => {
@@ -40,22 +45,21 @@ export default function PublicProfileContent({
         .eq("receiver_id", userId)
         .order("created_at", { ascending: false });
 
-      if (error) return;
+      if (error || !reviewsData) return;
 
-      if (reviewsData && reviewsData.length > 0) {
-        const reviewerIds = reviewsData.map((r) => r.reviewer_id);
-        const { data: profiles } = await supabase
-          .from("profiles")
-          .select("id, username, avatar_url")
-          .in("id", reviewerIds);
+      const reviewerIds = [...new Set(reviewsData.map((r) => r.reviewer_id))];
 
-        const mergedReviews = reviewsData.map((review) => ({
-          ...review,
-          reviewer: profiles?.find((p) => p.id === review.reviewer_id),
-        }));
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, username, avatar_url")
+        .in("id", reviewerIds);
 
-        setReviews(mergedReviews);
-      }
+      const mergedReviews = reviewsData.map((review) => ({
+        ...review,
+        reviewer: profiles?.find((p) => p.id === review.reviewer_id),
+      }));
+
+      setReviews(mergedReviews as ReviewWithProfile[]);
     };
 
     fetchReviews();
@@ -279,7 +283,7 @@ export default function PublicProfileContent({
                                 className="object-cover"
                               />
                             ) : (
-                              <User
+                              <UserIcon
                                 className="h-full w-full p-2.5 text-slate-300"
                                 aria-hidden="true"
                               />
