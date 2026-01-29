@@ -77,7 +77,20 @@ export default function ChatPage() {
           setError("Kunde inte hämta konversationen.");
           return;
         }
-        setConversation(conv as unknown as ChatConversation);
+
+        const chatConv = conv as unknown as ChatConversation;
+        setConversation(chatConv);
+
+        const { data: existingReview } = await supabase
+          .from("reviews")
+          .select("id")
+          .eq("reviewer_id", user.id)
+          .eq("ad_id", chatConv.ad.id)
+          .maybeSingle();
+
+        if (existingReview) {
+          setReviewSubmitted(true);
+        }
 
         await supabase
           .from("messages")
@@ -163,6 +176,7 @@ export default function ChatPage() {
         currentUser.id === conversation.buyer_id
           ? conversation.seller_id
           : conversation.buyer_id,
+      ad_id: conversation.ad.id,
       rating: rating,
       comment: comment,
     });
@@ -329,6 +343,7 @@ export default function ChatPage() {
                   {[1, 2, 3, 4, 5].map((star) => (
                     <button
                       key={star}
+                      type="button"
                       onClick={() => setRating(star)}
                       aria-label={`Ge ${star} stjärnor av 5`}
                       className="transition-transform active:scale-125 focus:outline-none cursor-pointer"
@@ -353,12 +368,14 @@ export default function ChatPage() {
                 />
                 <div className="flex gap-2">
                   <button
+                    type="button"
                     onClick={() => setShowReviewForm(false)}
                     className="flex-1 bg-white text-slate-700 py-3 rounded-xl font-bold text-xs border-2 border-slate-200 hover:bg-slate-50 cursor-pointer"
                   >
                     Avbryt
                   </button>
                   <button
+                    type="button"
                     onClick={submitReview}
                     className="flex-1 bg-slate-950 text-white py-3 rounded-xl font-bold text-xs hover:bg-slate-800 uppercase tracking-widest cursor-pointer"
                   >
