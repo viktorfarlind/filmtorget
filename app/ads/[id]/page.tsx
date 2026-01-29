@@ -7,7 +7,7 @@ import Image from "next/image";
 import { useRouter, useParams } from "next/navigation";
 import {
   ArrowLeft,
-  User,
+  User as UserIcon,
   MapPin,
   Globe,
   Disc,
@@ -18,12 +18,17 @@ import {
 } from "lucide-react";
 import AdOwnerControls from "@/components/AdOwnerControls";
 import ContactSellerButton from "@/components/ContactSellerButton";
+import { User } from "@supabase/supabase-js";
+import { Ad, Profile } from "@/types/database";
 
+interface AdWithProfile extends Ad {
+  profiles: Profile | null;
+}
 export default function AdDetailsPage() {
   const router = useRouter();
   const params = useParams();
-  const [ad, setAd] = useState<any>(null);
-  const [user, setUser] = useState<any>(null);
+  const [ad, setAd] = useState<AdWithProfile | null>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -36,7 +41,7 @@ export default function AdDetailsPage() {
       const { data, error } = await supabase
         .from("ads")
         .select(`*, profiles (username, avatar_url, id)`)
-        .eq("id", params.id)
+        .eq("id", params.id as string)
         .single();
 
       if (error || !data) {
@@ -44,7 +49,7 @@ export default function AdDetailsPage() {
         return;
       }
 
-      setAd(data);
+      setAd(data as AdWithProfile);
       setLoading(false);
     };
 
@@ -58,9 +63,9 @@ export default function AdDetailsPage() {
       case "4K UHD":
         return "bg-slate-900 text-white";
       case "DVD":
-        return "bg-slate-200 text-slate-900"; 
+        return "bg-slate-200 text-slate-900";
       case "VHS":
-        return "bg-orange-700 text-white"; 
+        return "bg-orange-700 text-white";
       default:
         return "bg-slate-200 text-slate-900";
     }
@@ -202,7 +207,7 @@ export default function AdDetailsPage() {
                         className="object-cover"
                       />
                     ) : (
-                      <User
+                      <UserIcon
                         className="h-6 w-6 text-slate-400"
                         aria-hidden="true"
                       />
@@ -307,7 +312,7 @@ function SpecItem({
   label,
   value,
 }: {
-  icon: any;
+  icon: React.ElementType;
   label: string;
   value: string;
 }) {
