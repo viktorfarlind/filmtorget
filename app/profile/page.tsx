@@ -3,19 +3,11 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/utils/supabaseClient";
-import Link from "next/link";
 import Image from "next/image";
-import {
-  LogOut,
-  Plus,
-  Package,
-  User,
-  Loader2,
-  Camera,
-  Pencil,
-} from "lucide-react";
-import AdCard from "@/components/AdCard";
+import { LogOut, Plus, User, Loader2, Pencil, Star } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
+import PublicProfileContent from "@/components/PublicProfileContent";
+import Link from "next/link";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -24,6 +16,7 @@ export default function ProfilePage() {
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
   const [myAds, setMyAds] = useState<any[]>([]);
+  const [reviewStats, setReviewStats] = useState({ count: 0, average: 0 });
 
   useEffect(() => {
     const getData = async () => {
@@ -52,6 +45,19 @@ export default function ProfilePage() {
         .order("created_at", { ascending: false });
 
       if (ads) setMyAds(ads);
+
+      const { data: reviews } = await supabase
+        .from("reviews")
+        .select("rating")
+        .eq("receiver_id", user.id);
+
+      if (reviews && reviews.length > 0) {
+        const avg = Math.round(
+          reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length
+        );
+        setReviewStats({ count: reviews.length, average: avg });
+      }
+
       setLoading(false);
     };
 
@@ -100,7 +106,7 @@ export default function ProfilePage() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
+        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
       </div>
     );
   }
@@ -110,11 +116,11 @@ export default function ProfilePage() {
 
   return (
     <div className="min-h-screen bg-slate-50 pb-24">
-      <div className="bg-white border-b border-slate-200">
-        <div className="max-w-5xl mx-auto px-4 py-12">
-          <div className="flex flex-col md:flex-row items-center gap-6">
-            <div className="relative">
-              <div className="h-32 w-32 rounded-full bg-slate-100 border-4 border-white shadow-xl overflow-hidden flex items-center justify-center text-slate-400 relative">
+      <div className="bg-slate-950 text-white pt-24 pb-32 relative">
+        <div className="max-w-6xl mx-auto px-4 text-center">
+          <div className="flex flex-col items-center">
+            <div className="relative mb-6">
+              <div className="h-28 w-28 rounded-full bg-slate-800 border-4 border-slate-700 overflow-hidden relative shadow-2xl flex items-center justify-center">
                 {profile?.avatar_url ? (
                   <Image
                     src={profile.avatar_url}
@@ -123,18 +129,16 @@ export default function ProfilePage() {
                     className="object-cover"
                   />
                 ) : (
-                  <User className="h-12 w-12" />
+                  <User className="h-12 w-12 text-slate-500" />
                 )}
-
                 {uploading && (
                   <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-20">
                     <Loader2 className="h-6 w-6 animate-spin text-white" />
                   </div>
                 )}
               </div>
-
-              <label className="absolute bottom-0 right-0 bg-blue-600 p-2.5 rounded-full text-white shadow-lg cursor-pointer hover:bg-blue-700 transition-colors border-2 border-white z-30">
-                <Pencil className="h-4 w-4" />
+              <label className="absolute bottom-0 right-0 bg-blue-600 p-2 rounded-full text-white shadow-lg cursor-pointer hover:bg-blue-700 transition-colors border-2 border-slate-950 z-30">
+                <Pencil className="h-3 w-3" />
                 <input
                   type="file"
                   accept="image/*"
@@ -145,44 +149,63 @@ export default function ProfilePage() {
               </label>
             </div>
 
-            <div className="text-center md:text-left flex-1">
-              <h1 className="text-3xl font-extrabold text-slate-900 mb-1">
-                {profile?.username || user.email?.split("@")[0]}
-              </h1>
-              <p className="text-slate-500 text-sm mb-6 flex items-center justify-center md:justify-start gap-2">
-                {user.email}
-              </p>
+            <h1 className="text-4xl font-black tracking-tight mb-2">
+              {profile?.username || user.email?.split("@")[0]}
+            </h1>
 
-              <div className="flex flex-wrap gap-3 justify-center md:justify-start">
-                <Link
-                  href="/create-ad"
-                  className="inline-flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-full transition-all shadow-lg shadow-blue-600/20 active:scale-95"
-                >
-                  <Plus className="h-4 w-4" /> Skapa annons
-                </Link>
-                <button
-                  onClick={handleSignOut}
-                  className="inline-flex items-center gap-2 px-6 py-2.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 text-sm font-bold rounded-full transition-all active:scale-95"
-                >
-                  <LogOut className="h-4 w-4" /> Logga ut
-                </button>
+            <div className="flex items-center gap-2 mb-2">
+              <div className="flex items-center">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <Star
+                    key={star}
+                    className={`h-5 w-5 ${
+                      reviewStats.average >= star
+                        ? "text-amber-400 fill-amber-400"
+                        : "text-slate-700"
+                    }`}
+                  />
+                ))}
               </div>
+              <span className="text-sm font-bold text-slate-400">
+                {reviewStats.count > 0
+                  ? `(${reviewStats.count} omdömen)`
+                  : "(Inga omdömen)"}
+              </span>
             </div>
 
-            <div className="flex gap-10 border-t md:border-t-0 md:border-l border-slate-100 pt-6 md:pt-0 md:pl-10 mt-6 md:mt-0">
+            <p className="text-slate-400 text-sm mb-8 font-medium">
+              {user.email}
+            </p>
+
+            <div className="flex flex-wrap gap-3 justify-center mb-10">
+              <Link
+                href="/create-ad"
+                className="inline-flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-full transition-all shadow-lg shadow-blue-600/20 active:scale-95 cursor-pointer"
+              >
+                <Plus className="h-4 w-4" /> Skapa annons
+              </Link>
+              <button
+                onClick={handleSignOut}
+                className="inline-flex items-center gap-2 px-6 py-2.5 bg-white/10 border border-white/10 hover:bg-white/20 text-white text-sm font-bold rounded-full transition-all active:scale-95 cursor-pointer"
+              >
+                <LogOut className="h-4 w-4" /> Logga ut
+              </button>
+            </div>
+
+            <div className="flex gap-10">
               <div className="text-center">
-                <span className="block text-3xl font-extrabold text-slate-900">
+                <span className="block text-3xl font-extrabold text-white">
                   {activeAdsCount}
                 </span>
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">
                   Aktiva
                 </span>
               </div>
               <div className="text-center">
-                <span className="block text-3xl font-extrabold text-emerald-600">
+                <span className="block text-3xl font-extrabold text-emerald-500">
                   {soldAdsCount}
                 </span>
-                <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">
                   Sålda
                 </span>
               </div>
@@ -191,53 +214,8 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      <div className="max-w-5xl mx-auto px-4 py-12">
-        <div className="flex items-center gap-3 mb-8">
-          <div className="p-2 bg-slate-200 rounded-lg">
-            <Package className="h-5 w-5 text-slate-600" />
-          </div>
-          <h2 className="text-xl font-bold text-slate-900">Mina annonser</h2>
-        </div>
-
-        {myAds.length === 0 ? (
-          <div className="text-center py-24 bg-white rounded-3xl border-2 border-dashed border-slate-200">
-            <div className="inline-flex bg-slate-50 p-5 rounded-full mb-4">
-              <Package className="h-10 w-10 text-slate-300" />
-            </div>
-            <p className="text-slate-900 font-bold text-lg">
-              Här var det tomt!
-            </p>
-            <p className="text-slate-500 mb-6">
-              Börja rensa i hyllan och tjäna en slant.
-            </p>
-            <Link
-              href="/create-ad"
-              className="bg-slate-900 text-white px-8 py-3 rounded-full font-bold hover:bg-slate-800 transition-colors shadow-xl"
-            >
-              Lägg upp din första film
-            </Link>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 gap-4 sm:gap-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-            {myAds.map((ad) => (
-              <div
-                key={ad.id}
-                className={`relative transition-all ${
-                  ad.is_sold ? "grayscale opacity-50" : ""
-                }`}
-              >
-                <AdCard ad={ad} />
-                {ad.is_sold && (
-                  <div className="absolute inset-0 bg-slate-900/40 flex items-center justify-center rounded-2xl pointer-events-none">
-                    <span className="text-[10px] sm:text-xs bg-white text-slate-900 font-black px-2 py-1 rounded shadow-sm rotate-[-10deg] uppercase">
-                      Såld
-                    </span>
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
+      <div className="max-w-7xl mx-auto px-4 relative -mt-16 z-20">
+        {user && <PublicProfileContent initialAds={myAds} userId={user.id} />}
       </div>
     </div>
   );
