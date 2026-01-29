@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/utils/supabaseClient";
 import Image from "next/image";
 import {
-  User,
+  User as UserIcon,
   Package,
   Calendar,
   ArrowLeft,
@@ -14,44 +14,46 @@ import {
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import PublicProfileContent from "@/components/PublicProfileContent";
+import { Profile, Ad, Review } from "@/types/database";
 
 export default function PublicProfilePage() {
   const params = useParams();
-  const [profile, setProfile] = useState<any>(null);
-  const [ads, setAds] = useState<any[]>([]);
-  const [reviews, setReviews] = useState<any[]>([]);
+  const userId = params.id as string;
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [ads, setAds] = useState<Ad[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchProfileData = async () => {
-      if (!params.id) return;
+      if (!userId) return;
 
       const { data: profileData } = await supabase
         .from("profiles")
         .select("*")
-        .eq("id", params.id)
+        .eq("id", userId)
         .single();
 
       const { data: adsData } = await supabase
         .from("ads")
         .select("*")
-        .eq("user_id", params.id)
+        .eq("user_id", userId)
         .order("is_sold", { ascending: true })
         .order("created_at", { ascending: false });
 
       const { data: reviewsData } = await supabase
         .from("reviews")
         .select("*")
-        .eq("receiver_id", params.id);
+        .eq("receiver_id", userId);
 
-      setProfile(profileData);
-      setAds(adsData || []);
-      setReviews(reviewsData || []);
+      setProfile(profileData as Profile);
+      setAds((adsData as Ad[]) || []);
+      setReviews((reviewsData as Review[]) || []);
       setLoading(false);
     };
 
     fetchProfileData();
-  }, [params.id]);
+  }, [userId]);
 
   if (loading)
     return (
@@ -103,12 +105,12 @@ export default function PublicProfilePage() {
               {profile.avatar_url ? (
                 <Image
                   src={profile.avatar_url}
-                  alt={profile.username}
+                  alt={profile.username || "Profilbild"}
                   fill
                   className="object-cover"
                 />
               ) : (
-                <User className="h-14 w-14 text-slate-600" />
+                <UserIcon className="h-14 w-14 text-slate-600" />
               )}
             </div>
 
@@ -148,7 +150,7 @@ export default function PublicProfilePage() {
         </div>
       </div>
       <div className="max-w-7xl mx-auto px-4 relative -mt-16 z-20">
-        <PublicProfileContent initialAds={ads} userId={params.id as string} />
+        <PublicProfileContent initialAds={ads} userId={userId} />
       </div>
     </div>
   );
