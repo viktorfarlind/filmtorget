@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import AdCard from "./AdCard";
 import Image from "next/image";
 import {
@@ -13,18 +13,51 @@ import {
   MessageSquare,
   User,
 } from "lucide-react";
+import { supabase } from "@/utils/supabaseClient";
 
 export default function PublicProfileContent({
   initialAds,
-  reviews = [],
+  userId,
 }: {
   initialAds: any[];
-  reviews?: any[];
+  userId: string;
 }) {
   const [activeTab, setActiveTab] = useState<"ads" | "reviews">("ads");
   const [searchTerm, setSearchTerm] = useState("");
   const [formatFilter, setFormatFilter] = useState("Alla");
   const [sortBy, setSortBy] = useState("newest");
+  const [reviews, setReviews] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchReviews = async () => {
+      if (!userId) return;
+
+      const { data: reviewsData, error } = await supabase
+        .from("reviews")
+        .select("*")
+        .eq("receiver_id", userId)
+        .order("created_at", { ascending: false });
+
+      if (error) return;
+
+      if (reviewsData && reviewsData.length > 0) {
+        const reviewerIds = reviewsData.map((r) => r.reviewer_id);
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("id, username, avatar_url")
+          .in("id", reviewerIds);
+
+        const mergedReviews = reviewsData.map((review) => ({
+          ...review,
+          reviewer: profiles?.find((p) => p.id === review.reviewer_id),
+        }));
+
+        setReviews(mergedReviews);
+      }
+    };
+
+    fetchReviews();
+  }, [userId]);
 
   const processedAds = useMemo(() => {
     let filtered = initialAds.filter((ad) => {
@@ -53,7 +86,7 @@ export default function PublicProfileContent({
         <div className="flex border-b border-slate-100">
           <button
             onClick={() => setActiveTab("ads")}
-            className={`flex-1 py-6 flex items-center justify-center gap-2 font-bold transition-colors ${
+            className={`flex-1 py-6 flex items-center justify-center gap-2 font-bold transition-colors cursor-pointer ${
               activeTab === "ads"
                 ? "text-blue-600 border-b-2 border-blue-600 bg-blue-50/30"
                 : "text-slate-400 hover:text-slate-600"
@@ -64,7 +97,7 @@ export default function PublicProfileContent({
           </button>
           <button
             onClick={() => setActiveTab("reviews")}
-            className={`flex-1 py-6 flex items-center justify-center gap-2 font-bold transition-colors ${
+            className={`flex-1 py-6 flex items-center justify-center gap-2 font-bold transition-colors cursor-pointer ${
               activeTab === "reviews"
                 ? "text-blue-600 border-b-2 border-blue-600 bg-blue-50/30"
                 : "text-slate-400 hover:text-slate-600"
@@ -160,11 +193,11 @@ export default function PublicProfileContent({
                     Inga omdömen ännu
                   </h3>
                   <p className="text-slate-500">
-                    Bli den första som gör affär med denna säljare!
+                    Bli den första som handlar hos denna säljare!
                   </p>
                 </div>
               ) : (
-                <div className="space-y-8">
+                <div className="space-y-8 animate-in fade-in duration-500">
                   {reviews.map((review) => (
                     <div
                       key={review.id}
@@ -186,7 +219,7 @@ export default function PublicProfileContent({
                           </div>
                           <div>
                             <p className="font-bold text-slate-900">
-                              {review.reviewer?.username}
+                              {review.reviewer?.username || "Användare"}
                             </p>
                             <div className="flex items-center gap-1">
                               {[1, 2, 3, 4, 5].map((s) => (
