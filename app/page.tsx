@@ -1,4 +1,4 @@
-import Link from "next/link";
+// 1. TA BORT "use client" - Detta bör vara en Server Component för SEO och prestanda
 import { Disc, Clapperboard, Sparkles } from "lucide-react";
 import { supabase } from "@/utils/supabaseClient";
 import AdCard from "@/components/AdCard";
@@ -11,8 +11,9 @@ type Props = {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 };
 
+// 2. Behåll async här (det fungerar eftersom det nu är en Server Component)
 export default async function Home(props: Props) {
-  const searchParams = await props.searchParams;
+  const searchParams = await props.searchParams; // Vänta på params (krav i Next 15)
 
   const formatFilter =
     typeof searchParams.format === "string" ? searchParams.format : null;
@@ -21,6 +22,7 @@ export default async function Home(props: Props) {
   const sortOption =
     typeof searchParams.sort === "string" ? searchParams.sort : "newest";
 
+  // Hämta nyinkommet
   const { data: latestAdsData } = await supabase
     .from("ads")
     .select("*")
@@ -30,16 +32,18 @@ export default async function Home(props: Props) {
 
   const latestAds = latestAdsData || [];
 
+  // Bygg sökfrågan för huvudlistan
   let query = supabase.from("ads").select("*").eq("is_sold", false);
 
   if (formatFilter) query = query.eq("format", formatFilter);
-  
+
   if (searchQuery) {
     query = query.or(
       `title.ilike.%${searchQuery}%,format.ilike.%${searchQuery}%`
     );
   }
 
+  // Sortering
   switch (sortOption) {
     case "price_asc":
       query = query.order("price", { ascending: true });
@@ -60,39 +64,47 @@ export default async function Home(props: Props) {
       <HeroSection />
 
       {latestAds.length > 0 && (
-        <section className="-mt-6 relative z-10 space-y-6">
+        <section
+          className="-mt-6 relative z-10 space-y-6"
+          aria-labelledby="latest-heading"
+        >
           <div className="text-center px-4">
             <div className="inline-flex items-center gap-2 bg-white/80 backdrop-blur px-4 py-1.5 rounded-full shadow-sm border border-blue-100 mb-2">
-              <Sparkles className="h-4 w-4 text-blue-600 fill-blue-600" />
-              <span className="text-xs font-bold text-blue-900 uppercase tracking-wide">
+              <Sparkles
+                className="h-4 w-4 text-blue-600 fill-blue-600"
+                aria-hidden="true"
+              />
+              <h2
+                id="latest-heading"
+                className="text-xs font-black text-blue-900 uppercase tracking-widest italic"
+              >
                 Nyinkommet
-              </span>
+              </h2>
             </div>
           </div>
 
           <div className="relative w-full">
+            {/* Mobil-karusell */}
             <div className="md:hidden w-full relative">
               <div className="flex overflow-x-auto gap-4 px-4 snap-x snap-mandatory scrollbar-hide pb-4">
-                {latestAds.map((ad, index) => (
+                {latestAds.map((ad) => (
                   <div
-                    key={`mob-${ad.id}-${index}`}
+                    key={`mob-${ad.id}`}
                     className="w-40 shrink-0 snap-center transition-transform active:scale-95"
                   >
                     <AdCard ad={ad} />
                   </div>
                 ))}
-                <div className="w-2 shrink-0" />
               </div>
-              <div className="absolute top-0 left-0 h-full w-6 bg-linear-to-r from-slate-50 to-transparent z-10 pointer-events-none" />
-              <div className="absolute top-0 right-0 h-full w-6 bg-linear-to-l from-slate-50 to-transparent z-10 pointer-events-none" />
             </div>
 
+            {/* Desktop-vy */}
             <div className="hidden md:flex w-full overflow-x-auto pb-8 pt-4 px-8 scrollbar-hide">
               <div className="flex gap-6 mx-auto">
                 {latestAds.map((ad) => (
                   <div
                     key={`desk-${ad.id}`}
-                    className="w-50 shrink-0 transition-transform hover:-translate-y-2 duration-300"
+                    className="w-48 shrink-0 transition-transform hover:-translate-y-2 duration-300"
                   >
                     <AdCard ad={ad} />
                   </div>
@@ -103,17 +115,24 @@ export default async function Home(props: Props) {
         </section>
       )}
 
-      <section className="px-4 max-w-6xl mx-auto w-full border-t border-slate-200 pt-12">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-8">
+      <section
+        className="px-4 max-w-6xl mx-auto w-full border-t border-slate-200 pt-12"
+        aria-labelledby="main-list-heading"
+      >
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-6 mb-10">
           <div>
-            <h2 className="font-bold text-2xl text-slate-900 flex items-center gap-2">
+            <h2
+              id="main-list-heading"
+              className="font-black text-3xl text-slate-950 flex items-center gap-3 uppercase italic tracking-tighter"
+            >
               <Clapperboard
-                className="h-6 w-6 text-slate-700"
-                strokeWidth={2}
+                className="h-8 w-8 text-blue-600"
+                strokeWidth={2.5}
+                aria-hidden="true"
               />
               {formatFilter ? `${formatFilter}-filmer` : "Alla filmer"}
             </h2>
-            <p className="text-slate-500 text-sm mt-1">
+            <p className="text-slate-600 text-sm mt-2 font-bold uppercase tracking-tight">
               Visar {mainListAds?.length || 0} aktiva annonser
             </p>
           </div>
@@ -121,16 +140,22 @@ export default async function Home(props: Props) {
         </div>
 
         {!mainListAds || mainListAds.length === 0 ? (
-          <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-slate-300 mx-2">
-            <div className="inline-flex bg-slate-50 p-4 rounded-full mb-4">
-              <Disc className="h-8 w-8 text-slate-300" strokeWidth={1} />
+          <div
+            className="text-center py-24 bg-white rounded-[2.5rem] border-2 border-dashed border-slate-200 mx-2"
+            role="status"
+          >
+            <div className="inline-flex bg-slate-50 p-6 rounded-full mb-6">
+              <Disc
+                className="h-12 w-12 text-slate-300 animate-spin-slow"
+                strokeWidth={1}
+              />
             </div>
-            <p className="text-slate-900 font-medium italic">
+            <p className="text-slate-900 font-black uppercase italic tracking-widest">
               Inga nya filmer hittades just nu
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-y-8 gap-x-4 sm:gap-6 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+          <div className="grid grid-cols-2 gap-y-12 gap-x-4 sm:gap-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
             {mainListAds.map((ad) => (
               <AdCard key={ad.id} ad={ad} />
             ))}
