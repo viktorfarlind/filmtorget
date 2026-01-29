@@ -41,9 +41,7 @@ export default function PublicProfilePage() {
 
       const { data: reviewsData } = await supabase
         .from("reviews")
-        .select(
-          "*, reviewer:profiles!reviews_reviewer_id_fkey(username, avatar_url)"
-        )
+        .select("*")
         .eq("receiver_id", params.id);
 
       setProfile(profileData);
@@ -57,14 +55,14 @@ export default function PublicProfilePage() {
 
   if (loading)
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+      <div className="min-h-screen flex items-center justify-center bg-slate-950">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
       </div>
     );
 
   if (!profile)
     return (
-      <div className="text-center py-20 font-bold text-slate-900">
+      <div className="min-h-screen flex items-center justify-center bg-slate-50 text-slate-900 font-black uppercase italic">
         Användaren hittades inte
       </div>
     );
@@ -89,35 +87,37 @@ export default function PublicProfilePage() {
 
   return (
     <div className="min-h-screen bg-slate-50 pb-32">
-      <div className="bg-slate-950 text-white pt-24 pb-32 relative">
-        <div className="max-w-6xl mx-auto px-4 text-center">
+      <div className="bg-slate-950 text-white pt-24 pb-32 relative overflow-hidden">
+        <div className="absolute top-0 left-1/4 w-64 h-64 bg-blue-600/10 blur-[100px] rounded-full pointer-events-none" />
+
+        <div className="max-w-6xl mx-auto px-4 text-center relative z-10">
           <Link
             href="/"
-            className="absolute top-8 left-6 inline-flex items-center gap-2 text-slate-400 hover:text-white transition-colors text-sm font-bold bg-white/5 px-4 py-2 rounded-full backdrop-blur-sm cursor-pointer"
+            className="absolute top-0 left-0 inline-flex items-center gap-2 text-slate-300 hover:text-white transition-colors text-xs font-bold bg-white/10 px-4 py-2 rounded-full backdrop-blur-md focus:ring-2 focus:ring-blue-500 outline-none"
           >
             <ArrowLeft className="h-4 w-4" /> Tillbaka
           </Link>
 
           <div className="flex flex-col items-center">
-            <div className="h-28 w-28 rounded-full bg-slate-800 border-4 border-slate-700 overflow-hidden relative mb-6 shadow-2xl flex items-center justify-center">
+            <div className="h-32 w-32 rounded-full bg-slate-800 border-4 border-slate-700 overflow-hidden relative mb-6 shadow-2xl flex items-center justify-center">
               {profile.avatar_url ? (
                 <Image
                   src={profile.avatar_url}
-                  alt=""
+                  alt={profile.username}
                   fill
                   className="object-cover"
                 />
               ) : (
-                <User className="h-12 w-12 text-slate-500" />
+                <User className="h-14 w-14 text-slate-600" />
               )}
             </div>
 
-            <h1 className="text-4xl font-black tracking-tight mb-2">
+            <h1 className="text-4xl sm:text-5xl font-black tracking-tighter mb-2 uppercase italic">
               {profile.username}
             </h1>
 
-            <div className="flex items-center gap-2 mb-6">
-              <div className="flex items-center">
+            <div className="flex flex-col items-center gap-2 mb-8">
+              <div className="flex items-center gap-1">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <Star
                     key={star}
@@ -129,19 +129,17 @@ export default function PublicProfilePage() {
                   />
                 ))}
               </div>
-              <span className="text-sm font-bold text-slate-400">
-                {reviewCount > 0
-                  ? `(${reviewCount} omdömen)`
-                  : "(Inga omdömen)"}
+              <span className="text-xs font-bold text-slate-300 uppercase tracking-widest">
+                {reviewCount > 0 ? `${reviewCount} omdömen` : "Inga omdömen än"}
               </span>
             </div>
 
-            <div className="flex flex-wrap items-center justify-center gap-3 text-slate-400 text-sm font-medium">
-              <div className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full border border-white/10">
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-5 py-2.5 rounded-full text-xs font-bold uppercase tracking-wide text-slate-200">
                 <Package className="h-4 w-4 text-blue-500" />
                 {activeAdsCount} aktiva annonser
               </div>
-              <div className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full border border-white/10">
+              <div className="flex items-center gap-2 bg-white/5 border border-white/10 px-5 py-2.5 rounded-full text-xs font-bold uppercase tracking-wide text-slate-200">
                 <Calendar className="h-4 w-4 text-blue-500" />
                 Medlem sedan {joinDate}
               </div>
@@ -149,7 +147,6 @@ export default function PublicProfilePage() {
           </div>
         </div>
       </div>
-
       <div className="max-w-7xl mx-auto px-4 relative -mt-16 z-20">
         <PublicProfileContent initialAds={ads} userId={params.id as string} />
       </div>
