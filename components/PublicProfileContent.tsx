@@ -130,7 +130,21 @@ export default function PublicProfileContent({
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-x-6 gap-y-12">
                   {processedAds.map((ad) => (
-                    <AdCard key={ad.id} ad={ad} />
+                    <div
+                      key={ad.id}
+                      className={`relative transition-all duration-300 ${
+                        ad.is_sold ? "grayscale opacity-60" : ""
+                      }`}
+                    >
+                      <AdCard ad={ad} />
+                      {ad.is_sold && (
+                        <div className="absolute inset-0 bg-slate-900/40 flex items-center justify-center rounded-2xl pointer-events-none z-10">
+                          <span className="text-[10px] sm:text-xs bg-white text-slate-900 font-black px-2 py-1 rounded shadow-xl rotate-[-10deg] uppercase border border-slate-900">
+                            Såld
+                          </span>
+                        </div>
+                      )}
+                    </div>
                   ))}
                 </div>
               )}
