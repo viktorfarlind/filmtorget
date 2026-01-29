@@ -105,8 +105,12 @@ export default function ProfilePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <div
+        className="min-h-screen flex items-center justify-center bg-slate-50"
+        role="status"
+      >
         <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+        <span className="sr-only">Laddar din profil...</span>
       </div>
     );
   }
@@ -115,7 +119,7 @@ export default function ProfilePage() {
   const activeAdsCount = myAds.filter((ad) => !ad.is_sold).length;
 
   return (
-    <div className="min-h-screen bg-slate-50 pb-24">
+    <main className="min-h-screen bg-slate-50 pb-24">
       <div className="bg-slate-950 text-white pt-24 pb-32 relative">
         <div className="max-w-6xl mx-auto px-4 text-center">
           <div className="flex flex-col items-center">
@@ -124,22 +128,33 @@ export default function ProfilePage() {
                 {profile?.avatar_url ? (
                   <Image
                     src={profile.avatar_url}
-                    alt="Profilbild"
+                    alt="Din profilbild"
                     fill
                     className="object-cover"
                   />
                 ) : (
-                  <User className="h-12 w-12 text-slate-500" />
+                  <User
+                    className="h-12 w-12 text-slate-500"
+                    aria-hidden="true"
+                  />
                 )}
                 {uploading && (
-                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center z-20">
+                  <div
+                    className="absolute inset-0 bg-black/50 flex items-center justify-center z-20"
+                    aria-label="Laddar upp bild"
+                  >
                     <Loader2 className="h-6 w-6 animate-spin text-white" />
                   </div>
                 )}
               </div>
-              <label className="absolute bottom-0 right-0 bg-blue-600 p-2 rounded-full text-white shadow-lg cursor-pointer hover:bg-blue-700 transition-colors border-2 border-slate-950 z-30">
-                <Pencil className="h-3 w-3" />
+              <label
+                htmlFor="avatar-upload"
+                className="absolute bottom-0 right-0 bg-blue-600 p-2.5 rounded-full text-white shadow-lg cursor-pointer hover:bg-blue-700 transition-colors border-2 border-slate-950 z-30 focus-within:ring-4 focus-within:ring-blue-400 focus-within:outline-none"
+              >
+                <Pencil className="h-4 w-4" aria-hidden="true" />
+                <span className="sr-only">Ändra profilbild</span>
                 <input
+                  id="avatar-upload"
                   type="file"
                   accept="image/*"
                   className="hidden"
@@ -149,11 +164,14 @@ export default function ProfilePage() {
               </label>
             </div>
 
-            <h1 className="text-4xl font-black tracking-tight mb-2">
+            <h1 className="text-4xl font-black tracking-tighter mb-2 uppercase italic">
               {profile?.username || user.email?.split("@")[0]}
             </h1>
 
-            <div className="flex items-center gap-2 mb-2">
+            <div
+              className="flex items-center gap-2 mb-2"
+              aria-label={`Betyg: ${reviewStats.average} av 5 stjärnor`}
+            >
               <div className="flex items-center">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <Star
@@ -161,51 +179,52 @@ export default function ProfilePage() {
                     className={`h-5 w-5 ${
                       reviewStats.average >= star
                         ? "text-amber-400 fill-amber-400"
-                        : "text-slate-700"
+                        : "text-slate-800" // Mörkare för bättre kontrast mot mörk bakgrund
                     }`}
+                    aria-hidden="true"
                   />
                 ))}
               </div>
-              <span className="text-sm font-bold text-slate-400">
+              <span className="text-sm font-bold text-slate-300 uppercase tracking-widest">
                 {reviewStats.count > 0
                   ? `(${reviewStats.count} omdömen)`
                   : "(Inga omdömen)"}
               </span>
             </div>
 
-            <p className="text-slate-400 text-sm mb-8 font-medium">
+            <p className="text-slate-300 text-sm mb-8 font-bold uppercase tracking-tight">
               {user.email}
             </p>
 
             <div className="flex flex-wrap gap-3 justify-center mb-10">
               <Link
                 href="/create-ad"
-                className="inline-flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-full transition-all shadow-lg shadow-blue-600/20 active:scale-95 cursor-pointer"
+                className="inline-flex items-center gap-2 px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white text-xs font-black uppercase tracking-widest rounded-full transition-all shadow-xl shadow-blue-600/20 active:scale-95 focus:ring-4 focus:ring-blue-500 focus:outline-none"
               >
                 <Plus className="h-4 w-4" /> Skapa annons
               </Link>
               <button
                 onClick={handleSignOut}
-                className="inline-flex items-center gap-2 px-6 py-2.5 bg-white/10 border border-white/10 hover:bg-white/20 text-white text-sm font-bold rounded-full transition-all active:scale-95 cursor-pointer"
+                className="inline-flex items-center gap-2 px-8 py-3 bg-white/10 border-2 border-white/10 hover:bg-white/20 text-white text-xs font-black uppercase tracking-widest rounded-full transition-all active:scale-95 focus:ring-4 focus:ring-white/30 focus:outline-none cursor-pointer"
               >
                 <LogOut className="h-4 w-4" /> Logga ut
               </button>
             </div>
 
-            <div className="flex gap-10">
+            <div className="flex gap-12" aria-label="Annonsstatistik">
               <div className="text-center">
-                <span className="block text-3xl font-extrabold text-white">
+                <span className="block text-4xl font-black tracking-tighter text-white italic">
                   {activeAdsCount}
                 </span>
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
                   Aktiva
                 </span>
               </div>
               <div className="text-center">
-                <span className="block text-3xl font-extrabold text-emerald-500">
+                <span className="block text-4xl font-black tracking-tighter text-emerald-500 italic">
                   {soldAdsCount}
                 </span>
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-widest">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
                   Sålda
                 </span>
               </div>
@@ -215,8 +234,10 @@ export default function ProfilePage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 relative -mt-16 z-20">
-        {user && <PublicProfileContent initialAds={myAds} userId={user.id} />}
+        <section aria-label="Dina annonser och omdömen">
+          {user && <PublicProfileContent initialAds={myAds} userId={user.id} />}
+        </section>
       </div>
-    </div>
+    </main>
   );
 }
