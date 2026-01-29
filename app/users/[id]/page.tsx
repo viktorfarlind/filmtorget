@@ -1,50 +1,79 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import { supabase } from "@/utils/supabaseClient";
 import Image from "next/image";
-import { User, Package, Calendar, ArrowLeft, Star } from "lucide-react";
-import { notFound } from "next/navigation";
+import {
+  User,
+  Package,
+  Calendar,
+  ArrowLeft,
+  Star,
+  Loader2,
+} from "lucide-react";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import PublicProfileContent from "@/components/PublicProfileContent";
 
-export const dynamic = "force-dynamic";
+export default function PublicProfilePage() {
+  const params = useParams();
+  const [profile, setProfile] = useState<any>(null);
+  const [ads, setAds] = useState<any[]>([]);
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-type Props = {
-  params: Promise<{ id: string }>;
-};
+  useEffect(() => {
+    const fetchProfileData = async () => {
+      if (!params.id) return;
 
-export default async function PublicProfilePage(props: Props) {
-  const params = await props.params;
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", params.id)
+        .single();
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", params.id)
-    .single();
+      const { data: adsData } = await supabase
+        .from("ads")
+        .select("*")
+        .eq("user_id", params.id)
+        .order("is_sold", { ascending: true })
+        .order("created_at", { ascending: false });
 
-  if (!profile) return notFound();
+      const { data: reviewsData } = await supabase
+        .from("reviews")
+        .select(
+          "*, reviewer:profiles!reviews_reviewer_id_fkey(username, avatar_url)"
+        )
+        .eq("receiver_id", params.id);
 
-  const { data: ads } = await supabase
-    .from("ads")
-    .select("*")
-    .eq("user_id", params.id)
-    .order("is_sold", { ascending: true })
-    .order("created_at", { ascending: false });
+      setProfile(profileData);
+      setAds(adsData || []);
+      setReviews(reviewsData || []);
+      setLoading(false);
+    };
 
-  const { data: reviews } = await supabase
-    .from("reviews")
-    .select(
-      `
-      *,
-      reviewer:profiles!reviews_reviewer_id_fkey(username, avatar_url)
-    `
-    )
-    .eq("receiver_id", params.id)
-    .order("created_at", { ascending: false });
+    fetchProfileData();
+  }, [params.id]);
 
-  const reviewCount = reviews?.length || 0;
+  if (loading)
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+      </div>
+    );
+
+  if (!profile)
+    return (
+      <div className="text-center py-20 font-bold text-slate-900">
+        Användaren hittades inte
+      </div>
+    );
+
+  const reviewCount = reviews.length;
   const averageRating =
     reviewCount > 0
       ? Math.round(
-          reviews!.reduce((acc, item) => acc + item.rating, 0) / reviewCount
+          reviews.reduce((acc, item) => acc + item.rating, 0) / reviewCount
         )
       : 0;
 
@@ -56,7 +85,7 @@ export default async function PublicProfilePage(props: Props) {
       })
     : "en tid tillbaka";
 
-  const activeAdsCount = ads?.filter((ad) => !ad.is_sold).length || 0;
+  const activeAdsCount = ads.filter((ad) => !ad.is_sold).length;
 
   return (
     <div className="min-h-screen bg-slate-50 pb-32">
@@ -64,13 +93,13 @@ export default async function PublicProfilePage(props: Props) {
         <div className="max-w-6xl mx-auto px-4 text-center">
           <Link
             href="/"
-            className="absolute top-8 left-6 inline-flex items-center gap-2 text-slate-400 hover:text-white transition-colors text-sm font-bold bg-white/5 px-4 py-2 rounded-full backdrop-blur-sm"
+            className="absolute top-8 left-6 inline-flex items-center gap-2 text-slate-400 hover:text-white transition-colors text-sm font-bold bg-white/5 px-4 py-2 rounded-full backdrop-blur-sm cursor-pointer"
           >
             <ArrowLeft className="h-4 w-4" /> Tillbaka
           </Link>
 
           <div className="flex flex-col items-center">
-            <div className="h-28 w-28 rounded-full bg-slate-800 border-4 border-slate-700 overflow-hidden relative mb-6 shadow-2xl">
+            <div className="h-28 w-28 rounded-full bg-slate-800 border-4 border-slate-700 overflow-hidden relative mb-6 shadow-2xl flex items-center justify-center">
               {profile.avatar_url ? (
                 <Image
                   src={profile.avatar_url}
@@ -79,7 +108,7 @@ export default async function PublicProfilePage(props: Props) {
                   className="object-cover"
                 />
               ) : (
-                <User className="h-full w-full p-7 text-slate-500" />
+                <User className="h-12 w-12 text-slate-500" />
               )}
             </div>
 
@@ -122,7 +151,7 @@ export default async function PublicProfilePage(props: Props) {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 relative -mt-16 z-20">
-        <PublicProfileContent initialAds={ads || []} reviews={reviews || []} />
+        <PublicProfileContent initialAds={ads} userId={params.id as string} />
       </div>
     </div>
   );
