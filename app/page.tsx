@@ -33,7 +33,12 @@ export default async function Home(props: Props) {
   let query = supabase.from("ads").select("*").eq("is_sold", false);
 
   if (formatFilter) query = query.eq("format", formatFilter);
-  if (searchQuery) query = query.ilike("title", `%${searchQuery}%`);
+  
+  if (searchQuery) {
+    query = query.or(
+      `title.ilike.%${searchQuery}%,format.ilike.%${searchQuery}%`
+    );
+  }
 
   switch (sortOption) {
     case "price_asc":
