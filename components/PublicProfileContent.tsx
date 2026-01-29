@@ -18,8 +18,9 @@ import {
 import { supabase } from "@/utils/supabaseClient";
 import { Ad, Review, Profile } from "@/types/database";
 
-interface ReviewWithProfile extends Review {
+interface ReviewWithDetails extends Omit<Review, "reviewer"> {
   reviewer?: Pick<Profile, "id" | "username" | "avatar_url">;
+  ad?: Pick<Ad, "title">;
 }
 
 export default function PublicProfileContent({
@@ -33,7 +34,7 @@ export default function PublicProfileContent({
   const [searchTerm, setSearchTerm] = useState("");
   const [formatFilter, setFormatFilter] = useState("Alla");
   const [sortBy, setSortBy] = useState("newest");
-  const [reviews, setReviews] = useState<ReviewWithProfile[]>([]);
+  const [reviews, setReviews] = useState<ReviewWithDetails[]>([]);
 
   useEffect(() => {
     const fetchReviews = async () => {
@@ -41,7 +42,7 @@ export default function PublicProfileContent({
 
       const { data: reviewsData, error } = await supabase
         .from("reviews")
-        .select("*")
+        .select("*, ad:ads(title)")
         .eq("receiver_id", userId)
         .order("created_at", { ascending: false });
 
@@ -59,7 +60,7 @@ export default function PublicProfileContent({
         reviewer: profiles?.find((p) => p.id === review.reviewer_id),
       }));
 
-      setReviews(mergedReviews as ReviewWithProfile[]);
+      setReviews(mergedReviews as ReviewWithDetails[]);
     };
 
     fetchReviews();
@@ -136,9 +137,6 @@ export default function PublicProfileContent({
             <div className="flex flex-col items-center mb-12">
               <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="relative">
-                  <label htmlFor="search-ads" className="sr-only">
-                    Sök i användarens annonser
-                  </label>
                   <Search
                     className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500"
                     aria-hidden="true"
@@ -154,16 +152,13 @@ export default function PublicProfileContent({
                 </div>
 
                 <div className="relative">
-                  <label htmlFor="format-filter" className="sr-only">
-                    Filtrera på format
-                  </label>
                   <Filter
                     className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500"
                     aria-hidden="true"
                   />
                   <select
                     id="format-filter"
-                    className="w-full pl-11 pr-10 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 appearance-none text-slate-950 font-black uppercase italic tracking-tighter cursor-pointer transition-all"
+                    className="w-full pl-11 pr-10 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:outline-none focus:border-blue-500 appearance-none text-slate-950 font-black uppercase italic tracking-tighter cursor-pointer transition-all"
                     value={formatFilter}
                     onChange={(e) => setFormatFilter(e.target.value)}
                   >
@@ -173,23 +168,17 @@ export default function PublicProfileContent({
                     <option value="DVD">DVD</option>
                     <option value="VHS">VHS</option>
                   </select>
-                  <ChevronDown
-                    className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none"
-                    aria-hidden="true"
-                  />
+                  <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
                 </div>
 
                 <div className="relative">
-                  <label htmlFor="sort-ads" className="sr-only">
-                    Sortera annonser
-                  </label>
                   <ArrowUpDown
                     className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-500"
                     aria-hidden="true"
                   />
                   <select
                     id="sort-ads"
-                    className="w-full pl-11 pr-10 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 appearance-none text-slate-950 font-black uppercase italic tracking-tighter cursor-pointer transition-all"
+                    className="w-full pl-11 pr-10 py-4 bg-slate-50 border-2 border-slate-100 rounded-2xl focus:outline-none focus:border-blue-500 appearance-none text-slate-950 font-black uppercase italic tracking-tighter cursor-pointer transition-all"
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value)}
                   >
@@ -197,22 +186,14 @@ export default function PublicProfileContent({
                     <option value="price_asc">Pris: Lågt till högt</option>
                     <option value="price_desc">Pris: Högt till lågt</option>
                   </select>
-                  <ChevronDown
-                    className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none"
-                    aria-hidden="true"
-                  />
+                  <ChevronDown className="absolute right-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
                 </div>
               </div>
             </div>
 
             {processedAds.length === 0 ? (
-              <div
-                className="flex flex-col items-center py-20 text-center"
-                role="status"
-              >
-                <div className="bg-slate-50 p-6 rounded-full mb-6 text-slate-300">
-                  <Package className="h-12 w-12" aria-hidden="true" />
-                </div>
+              <div className="flex flex-col items-center py-20 text-center">
+                <Package className="h-12 w-12 text-slate-300 mb-6" />
                 <p className="text-slate-600 text-lg font-bold uppercase italic tracking-tight">
                   Inga annonser matchar dina val.
                 </p>
@@ -222,9 +203,7 @@ export default function PublicProfileContent({
                 {processedAds.map((ad) => (
                   <div
                     key={ad.id}
-                    className={`relative transition-all duration-300 ${
-                      ad.is_sold ? "grayscale opacity-50" : ""
-                    }`}
+                    className="relative transition-all duration-300"
                   >
                     <AdCard ad={ad} />
                     {ad.is_sold && (
@@ -248,14 +227,9 @@ export default function PublicProfileContent({
           >
             <div className="max-w-3xl mx-auto py-4">
               {reviews.length === 0 ? (
-                <div
-                  className="flex flex-col items-center py-16 text-center"
-                  role="status"
-                >
-                  <div className="bg-amber-50 p-6 rounded-full mb-6 text-amber-500">
-                    <MessageSquare className="h-12 w-12" aria-hidden="true" />
-                  </div>
-                  <h3 className="text-xl font-black text-slate-950 uppercase italic tracking-tighter mb-2">
+                <div className="flex flex-col items-center py-16 text-center">
+                  <MessageSquare className="h-12 w-12 text-amber-500 mb-6" />
+                  <h3 className="text-xl font-black text-slate-950 uppercase italic mb-2">
                     Inga omdömen ännu
                   </h3>
                   <p className="text-slate-600 font-medium">
@@ -263,40 +237,34 @@ export default function PublicProfileContent({
                   </p>
                 </div>
               ) : (
-                <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="space-y-6">
                   {reviews.map((review) => (
                     <article
                       key={review.id}
-                      className="bg-slate-50 p-6 rounded-[2rem] border-2 border-slate-100 transition-all hover:border-blue-200"
+                      className="bg-slate-50 p-6 rounded-[2rem] border-2 border-slate-100"
                     >
                       <div className="flex items-start justify-between mb-4">
                         <Link
                           href={`/users/${review.reviewer_id}`}
-                          className="flex items-center gap-3 group focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-full pr-4"
+                          className="flex items-center gap-3 group"
                         >
-                          <div className="h-12 w-12 rounded-full bg-white border-2 border-slate-200 overflow-hidden relative shadow-sm group-hover:border-blue-400 transition-colors">
+                          <div className="h-12 w-12 rounded-full bg-white border-2 border-slate-200 overflow-hidden relative">
                             {review.reviewer?.avatar_url ? (
                               <Image
                                 src={review.reviewer.avatar_url}
-                                alt={`Profilbild för ${review.reviewer.username}`}
+                                alt=""
                                 fill
                                 className="object-cover"
                               />
                             ) : (
-                              <UserIcon
-                                className="h-full w-full p-2.5 text-slate-300"
-                                aria-hidden="true"
-                              />
+                              <UserIcon className="h-full w-full p-2.5 text-slate-300" />
                             )}
                           </div>
                           <div>
                             <p className="font-black text-slate-950 uppercase italic tracking-tighter group-hover:text-blue-600 transition-colors">
                               {review.reviewer?.username || "Användare"}
                             </p>
-                            <div
-                              className="flex items-center gap-0.5"
-                              aria-label={`Betyg: ${review.rating} av 5 stjärnor`}
-                            >
+                            <div className="flex items-center gap-0.5">
                               {[1, 2, 3, 4, 5].map((s) => (
                                 <Star
                                   key={s}
@@ -305,25 +273,30 @@ export default function PublicProfileContent({
                                       ? "text-amber-500 fill-amber-500"
                                       : "text-slate-300"
                                   }`}
-                                  aria-hidden="true"
                                 />
                               ))}
                             </div>
                           </div>
                         </Link>
-
-                        <time
-                          dateTime={review.created_at}
-                          className="text-[10px] font-black text-slate-500 uppercase tracking-widest bg-white px-3 py-1 rounded-full border border-slate-200"
-                        >
+                        <time className="text-[10px] font-black text-slate-500 uppercase tracking-widest bg-white px-3 py-1 rounded-full border border-slate-200">
                           {new Date(review.created_at).toLocaleDateString(
                             "sv-SE"
                           )}
                         </time>
                       </div>
-                      <p className="text-slate-800 leading-relaxed font-bold italic text-base bg-white/50 p-4 rounded-2xl border border-white">
-                        &quot;{review.comment}&quot;
-                      </p>
+                      <div className="mb-4">
+                        <p className="text-slate-800 leading-relaxed font-bold italic text-base bg-white/50 p-4 rounded-2xl border border-white">
+                          &quot;{review.comment}&quot;
+                        </p>
+                      </div>
+                      {review.ad?.title && (
+                        <div className="flex items-center gap-2 px-4">
+                          <Package className="h-3 w-3 text-slate-400" />
+                          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">
+                            Gällde köp av: {review.ad.title}
+                          </span>
+                        </div>
+                      )}
                     </article>
                   ))}
                 </div>
