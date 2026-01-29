@@ -11,9 +11,23 @@ import {
   Loader2,
   Inbox,
 } from "lucide-react";
+import { Profile, Ad, Message } from "@/types/database";
+
+interface ConversationWithDetails {
+  id: string;
+  created_at: string;
+  ad: Pick<Ad, "title" | "image_url" | "is_sold">;
+  buyer: Profile;
+  seller: Profile;
+  messages: Message[];
+  lastMsg?: Message;
+  unreadCount: number;
+}
 
 export default function MessagesPage() {
-  const [conversations, setConversations] = useState<any[]>([]);
+  const [conversations, setConversations] = useState<ConversationWithDetails[]>(
+    []
+  );
   const [loading, setLoading] = useState(true);
   const [userId, setUserId] = useState<string | null>(null);
 
@@ -40,16 +54,19 @@ export default function MessagesPage() {
         .or(`buyer_id.eq.${user.id},seller_id.eq.${user.id}`);
 
       if (data) {
-        const formatted = data
-          .map((conv: any) => {
-            const lastMsg = conv.messages?.sort(
-              (a: any, b: any) =>
+        const formatted = (data as unknown as ConversationWithDetails[])
+          .map((conv) => {
+            const msgs = conv.messages || [];
+            const sortedMsgs = [...msgs].sort(
+              (a, b) =>
                 new Date(b.created_at).getTime() -
                 new Date(a.created_at).getTime()
-            )[0];
+            );
 
-            const unreadCount = conv.messages?.filter(
-              (m: any) => !m.is_read && m.sender_id !== user.id
+            const lastMsg = sortedMsgs[0];
+
+            const unreadCount = msgs.filter(
+              (m) => !m.is_read && m.sender_id !== user.id
             ).length;
 
             return { ...conv, lastMsg, unreadCount };
@@ -135,13 +152,12 @@ export default function MessagesPage() {
                     aria-label={`Konversation med ${otherUser.username} om ${
                       conv.ad.title
                     }. ${hasUnread ? "Du har olästa meddelanden." : ""}`}
-                    className={`group bg-white p-5 rounded-[2rem] border-2 transition-all flex items-center gap-4 focus:outline-none focus:ring-4 focus:ring-blue-500 focus:ring-offset-2 ${
+                    className={`group bg-white p-5 rounded-4xl border-2 transition-all flex items-center gap-4 focus:outline-none focus:ring-4 focus:ring-blue-500 focus:ring-offset-2 ${
                       hasUnread
                         ? "border-blue-600 shadow-md ring-1 ring-blue-100"
                         : "border-white shadow-sm hover:border-blue-400"
                     }`}
                   >
-                    {/* Annonsbild */}
                     <div className="h-20 w-16 relative rounded-xl overflow-hidden bg-slate-200 flex-shrink-0 shadow-inner border border-slate-100">
                       <Image
                         src={conv.ad.image_url}
