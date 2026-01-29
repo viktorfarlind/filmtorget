@@ -13,14 +13,29 @@ import {
   Star,
 } from "lucide-react";
 import Link from "next/link";
+import { User } from "@supabase/supabase-js";
+import { Ad, Profile, Message } from "@/types/database";
+
+interface ChatConversation {
+  id: string;
+  ad_id: string;
+  buyer_id: string;
+  seller_id: string;
+  created_at: string;
+  ad: Pick<Ad, "id" | "title" | "image_url" | "price" | "is_sold" | "user_id">;
+  buyer: Profile;
+  seller: Profile;
+}
 
 export default function ChatPage() {
   const { id: conversationId } = useParams();
   const router = useRouter();
-  const [messages, setMessages] = useState<any[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
-  const [conversation, setConversation] = useState<any>(null);
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [conversation, setConversation] = useState<ChatConversation | null>(
+    null
+  );
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -62,9 +77,8 @@ export default function ChatPage() {
           setError("Kunde inte hämta konversationen.");
           return;
         }
-        setConversation(conv);
+        setConversation(conv as unknown as ChatConversation);
 
-        // Markera befintliga som lästa
         await supabase
           .from("messages")
           .update({ is_read: true })
@@ -78,7 +92,7 @@ export default function ChatPage() {
           .eq("conversation_id", conversationId)
           .order("created_at", { ascending: true });
 
-        setMessages(msgs || []);
+        setMessages((msgs as Message[]) || []);
         setLoading(false);
 
         const channel = supabase
@@ -92,7 +106,7 @@ export default function ChatPage() {
               filter: `conversation_id=eq.${conversationId}`,
             },
             async (payload) => {
-              const msg = payload.new;
+              const msg = payload.new as Message;
               setMessages((prev) => {
                 if (prev.some((m) => m.id === msg.id)) return prev;
                 return [...prev, msg];
@@ -126,6 +140,7 @@ export default function ChatPage() {
   }, [messages, loading]);
 
   const markAsSold = async () => {
+    if (!conversation) return;
     if (!window.confirm("Vill du markera denna film som såld?")) return;
     const { error } = await supabase
       .from("ads")
@@ -141,6 +156,7 @@ export default function ChatPage() {
   };
 
   const submitReview = async () => {
+    if (!currentUser || !conversation) return;
     const { error } = await supabase.from("reviews").insert({
       reviewer_id: currentUser.id,
       receiver_id:
@@ -166,10 +182,10 @@ export default function ChatPage() {
     const content = newMessage;
     setNewMessage("");
 
-    const { data, error } = await supabase
+    const { data, error: sendError } = await supabase
       .from("messages")
       .insert({
-        conversation_id: conversationId,
+        conversation_id: conversationId as string,
         sender_id: currentUser.id,
         content,
         is_read: false,
@@ -177,12 +193,13 @@ export default function ChatPage() {
       .select()
       .single();
 
-    if (error) {
+    if (sendError) {
       alert("Kunde inte skicka");
     } else if (data) {
+      const sentMsg = data as Message;
       setMessages((prev) => {
-        if (prev.some((m) => m.id === data.id)) return prev;
-        return [...prev, data];
+        if (prev.some((m) => m.id === sentMsg.id)) return prev;
+        return [...prev, sentMsg];
       });
     }
     setSending(false);
@@ -329,7 +346,7 @@ export default function ChatPage() {
                 <textarea
                   placeholder="Skriv en kort kommentar om säljaren..."
                   aria-label="Kommentar till omdöme"
-                  className="w-full p-4 rounded-2xl border-2 border-amber-200 text-sm outline-none focus:ring-4 focus:ring-amber-500/20 bg-white text-slate-900 font-medium"
+                  className="w-full p-4 rounded-2xl border-2 border-amber-200 text-sm outline-none focus:ring-4 focus:ring-amber-500/20 bg-white text-slate-950 font-medium"
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
                   rows={2}
@@ -421,7 +438,7 @@ export default function ChatPage() {
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
-                    sendMessage(e as any);
+                    sendMessage(e as unknown as React.FormEvent);
                   }
                 }}
               />
