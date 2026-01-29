@@ -13,6 +13,7 @@ import {
   Star,
 } from "lucide-react";
 import Link from "next/link";
+import { v4 as uuidv4 } from "uuid";
 
 export default function ChatPage() {
   const { id: conversationId } = useParams();
@@ -63,6 +64,8 @@ export default function ChatPage() {
           return;
         }
         setConversation(conv);
+
+        // Markera befintliga som lästa
         await supabase
           .from("messages")
           .update({ is_read: true })
@@ -91,15 +94,18 @@ export default function ChatPage() {
               filter: `conversation_id=eq.${conversationId}`,
             },
             async (payload) => {
+              const msg = payload.new;
               setMessages((prev) => {
-                if (prev.find((m) => m.id === payload.new.id)) return prev;
-                return [...prev, payload.new];
+                // Förhindra dubbletter om vi redan lagt till meddelandet via sendMessage
+                if (prev.some((m) => m.id === msg.id)) return prev;
+                return [...prev, msg];
               });
-              if (payload.new.sender_id !== user.id) {
+
+              if (msg.sender_id !== user.id) {
                 await supabase
                   .from("messages")
                   .update({ is_read: true })
-                  .eq("id", payload.new.id);
+                  .eq("id", msg.id);
               }
             }
           )
@@ -176,17 +182,28 @@ export default function ChatPage() {
 
     if (error) {
       alert("Kunde inte skicka");
+    } else if (data) {
+      // Optimistisk uppdatering: Lägg till meddelandet direkt i state
+      setMessages((prev) => {
+        if (prev.some((m) => m.id === data.id)) return prev;
+        return [...prev, data];
+      });
     }
     setSending(false);
   };
 
   if (error)
     return (
-      <div className="h-[calc(100vh-64px)] flex flex-col items-center justify-center p-4 bg-white">
-        <p className="text-red-500 font-bold mb-4">{error}</p>
+      <div className="fixed inset-0 top-16 z-[100] flex flex-col items-center justify-center p-4 bg-white">
+        <p
+          className="text-red-600 font-black uppercase italic mb-4"
+          role="alert"
+        >
+          {error}
+        </p>
         <Link
           href="/messages"
-          className="bg-slate-900 text-white px-6 py-2 rounded-full text-sm font-bold cursor-pointer"
+          className="bg-slate-950 text-white px-8 py-3 rounded-full text-sm font-bold uppercase tracking-widest focus:ring-4 focus:ring-blue-500"
         >
           Tillbaka
         </Link>
@@ -195,8 +212,11 @@ export default function ChatPage() {
 
   if (loading || !conversation)
     return (
-      <div className="h-[calc(100vh-64px)] flex items-center justify-center bg-white">
-        <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+      <div className="fixed inset-0 top-16 z-[100] flex items-center justify-center bg-white">
+        <Loader2
+          className="h-8 w-8 animate-spin text-blue-600"
+          aria-label="Laddar chatt"
+        />
       </div>
     );
 
@@ -207,19 +227,20 @@ export default function ChatPage() {
       : conversation.buyer;
 
   return (
-    <div className="fixed inset-0 top-16 flex flex-col bg-slate-50 overflow-hidden">
+    <div className="fixed inset-0 top-16 z-[100] flex flex-col bg-white overflow-hidden font-sans">
       <div className="flex-1 flex flex-col max-w-4xl w-full mx-auto bg-white border-x border-slate-200 overflow-hidden relative shadow-2xl">
-        <div className="bg-white border-b border-slate-100 p-4 flex items-center justify-between z-20">
+        <header className="bg-white border-b border-slate-200 p-4 flex items-center justify-between z-20">
           <div className="flex items-center gap-4 min-w-0">
             <Link
               href="/messages"
-              className="p-2 hover:bg-slate-100 rounded-full transition-colors shrink-0 cursor-pointer"
+              aria-label="Tillbaka till meddelanden"
+              className="p-2 hover:bg-slate-100 rounded-full transition-colors shrink-0 focus:ring-2 focus:ring-blue-500"
             >
-              <ArrowLeft className="h-5 w-5 text-slate-600" />
+              <ArrowLeft className="h-5 w-5 text-slate-800" />
             </Link>
             <Link
               href={`/users/${otherUser?.id}`}
-              className="h-10 w-10 rounded-full bg-slate-100 relative overflow-hidden shrink-0 border border-slate-200 hover:opacity-80 transition-opacity cursor-pointer"
+              className="h-10 w-10 rounded-full bg-slate-100 relative overflow-hidden shrink-0 border border-slate-200 focus:ring-2 focus:ring-blue-500"
             >
               {otherUser?.avatar_url ? (
                 <Image
@@ -229,27 +250,22 @@ export default function ChatPage() {
                   className="object-cover"
                 />
               ) : (
-                <UserIcon className="p-2 text-slate-400" />
+                <UserIcon className="p-2 text-slate-400" aria-hidden="true" />
               )}
             </Link>
             <div className="min-w-0">
-              <Link
-                href={`/users/${otherUser?.id}`}
-                className="hover:text-blue-600 transition-colors cursor-pointer block"
-              >
-                <h2 className="font-bold text-slate-900 truncate leading-tight">
-                  {otherUser?.username || "Användare"}
-                </h2>
-              </Link>
+              <h2 className="font-black text-slate-950 truncate leading-tight uppercase italic tracking-tighter">
+                {otherUser?.username || "Användare"}
+              </h2>
               <div className="flex items-center gap-2">
                 <Link
                   href={`/ads/${conversation.ad?.id}`}
-                  className="text-[11px] text-slate-500 truncate font-medium uppercase tracking-tighter hover:text-blue-600 transition-colors cursor-pointer"
+                  className="text-[11px] text-slate-600 truncate font-bold uppercase tracking-tighter hover:text-blue-600 transition-colors"
                 >
                   Film: {conversation.ad?.title}
                 </Link>
                 {conversation.ad?.is_sold && (
-                  <span className="bg-emerald-100 text-emerald-700 text-[9px] font-black px-1.5 py-0.5 rounded flex items-center gap-0.5">
+                  <span className="bg-emerald-100 text-emerald-900 text-[9px] font-black px-1.5 py-0.5 rounded flex items-center gap-0.5 border border-emerald-200">
                     <CheckCircle2 className="h-2 w-2" /> SÅLD
                   </span>
                 )}
@@ -260,35 +276,49 @@ export default function ChatPage() {
           {isSeller && !conversation.ad?.is_sold && (
             <button
               onClick={markAsSold}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-black px-3 py-2 rounded-lg transition-all shadow-sm active:scale-95 flex-shrink-0 cursor-pointer uppercase"
+              className="bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] font-bold px-4 py-2 rounded-lg transition-all shadow-sm active:scale-95 uppercase tracking-widest focus:ring-4 focus:ring-emerald-500/50 cursor-pointer"
             >
               Markera såld
             </button>
           )}
-        </div>
+        </header>
 
         {conversation.ad?.is_sold && !isSeller && !reviewSubmitted && (
-          <div className="bg-amber-50 border-b border-amber-100 p-4 text-center">
+          <section
+            className="bg-amber-50 border-b border-amber-200 p-4 text-center"
+            aria-labelledby="review-heading"
+          >
             {!showReviewForm ? (
               <div className="flex flex-col items-center gap-2">
-                <p className="text-sm text-amber-900 font-bold">
+                <p
+                  id="review-heading"
+                  className="text-sm text-amber-900 font-black uppercase italic"
+                >
                   Filmen är såld! Hur var din upplevelse?
                 </p>
                 <button
                   onClick={() => setShowReviewForm(true)}
-                  className="bg-amber-500 text-white px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-wider hover:bg-amber-600 transition-all cursor-pointer shadow-sm"
+                  className="bg-amber-500 text-white px-6 py-2 rounded-full text-[10px] font-black uppercase tracking-widest hover:bg-amber-600 transition-all focus:ring-4 focus:ring-amber-500/50 shadow-md cursor-pointer"
                 >
                   Lämna omdöme
                 </button>
               </div>
             ) : (
-              <div className="max-w-sm mx-auto space-y-4 py-2">
+              <div
+                className="max-w-sm mx-auto space-y-4 py-2"
+                role="group"
+                aria-labelledby="review-form-title"
+              >
+                <h3 id="review-form-title" className="sr-only">
+                  Skicka omdöme
+                </h3>
                 <div className="flex justify-center gap-2">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <button
                       key={star}
                       onClick={() => setRating(star)}
-                      className="cursor-pointer transition-transform active:scale-125"
+                      aria-label={`Ge ${star} stjärnor av 5`}
+                      className="transition-transform active:scale-125 focus:outline-none cursor-pointer"
                     >
                       <Star
                         className={`h-8 w-8 ${
@@ -302,7 +332,8 @@ export default function ChatPage() {
                 </div>
                 <textarea
                   placeholder="Skriv en kort kommentar om säljaren..."
-                  className="w-full p-4 rounded-2xl border border-amber-200 text-sm outline-none focus:ring-4 focus:ring-amber-500/10 bg-white"
+                  aria-label="Kommentar till omdöme"
+                  className="w-full p-4 rounded-2xl border-2 border-amber-200 text-sm outline-none focus:ring-4 focus:ring-amber-500/20 bg-white text-slate-900 font-medium"
                   value={comment}
                   onChange={(e) => setComment(e.target.value)}
                   rows={2}
@@ -310,84 +341,109 @@ export default function ChatPage() {
                 <div className="flex gap-2">
                   <button
                     onClick={() => setShowReviewForm(false)}
-                    className="flex-1 bg-white text-slate-500 py-3 rounded-xl font-bold text-xs cursor-pointer border border-slate-200"
+                    className="flex-1 bg-white text-slate-700 py-3 rounded-xl font-bold text-xs border-2 border-slate-200 hover:bg-slate-50 cursor-pointer"
                   >
                     Avbryt
                   </button>
                   <button
                     onClick={submitReview}
-                    className="flex-1 bg-slate-900 text-white py-3 rounded-xl font-bold text-xs cursor-pointer"
+                    className="flex-1 bg-slate-950 text-white py-3 rounded-xl font-bold text-xs hover:bg-slate-800 uppercase tracking-widest cursor-pointer"
                   >
                     Skicka betyg
                   </button>
                 </div>
               </div>
             )}
-          </div>
+          </section>
         )}
 
-        <div
+        <main
           ref={scrollContainerRef}
-          className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 bg-white"
+          className="flex-1 overflow-y-auto p-4 md:p-8 space-y-6 bg-white scroll-smooth"
+          aria-live="polite"
         >
           {messages.map((msg) => {
-            const isMine = msg.sender_id === currentUser.id;
+            const isMine = msg.sender_id === currentUser?.id;
             return (
-              <div
+              <article
                 key={msg.id}
                 className={`flex ${isMine ? "justify-end" : "justify-start"}`}
+                aria-label={`${isMine ? "Du" : otherUser?.username} skickade:`}
               >
                 <div
-                  className={`relative max-w-[85%] sm:max-w-[70%] px-4 py-3 rounded-2xl shadow-sm ${
+                  className={`relative max-w-[85%] sm:max-w-[70%] px-5 py-3 rounded-2xl shadow-sm border ${
                     isMine
-                      ? "bg-blue-600 text-white rounded-br-none"
-                      : "bg-slate-100 text-slate-900 rounded-bl-none"
+                      ? "bg-blue-600 text-white border-blue-500 rounded-br-none"
+                      : "bg-slate-100 text-slate-900 border-slate-200 rounded-bl-none"
                   }`}
                 >
-                  <p className="text-[15px] leading-relaxed whitespace-pre-wrap font-medium">
+                  <p className="text-[15px] leading-relaxed whitespace-pre-wrap font-bold tracking-tight uppercase italic">
                     {msg.content}
                   </p>
-                  <div className="flex items-center justify-end gap-1.5 mt-1.5 opacity-60">
-                    <p className="text-[9px] font-bold uppercase">
+                  <div
+                    className={`flex items-center justify-end gap-1.5 mt-2 ${
+                      isMine ? "text-blue-50" : "text-slate-600"
+                    }`}
+                  >
+                    <time className="text-[9px] font-black uppercase tracking-widest">
                       {new Date(msg.created_at).toLocaleTimeString("sv-SE", {
                         hour: "2-digit",
                         minute: "2-digit",
                       })}
-                    </p>
+                    </time>
                     {isMine && (
-                      <span className="text-[10px] font-black">
+                      <span
+                        className="text-[10px] font-black"
+                        aria-label={msg.is_read ? "Läst" : "Skickat"}
+                      >
                         {msg.is_read ? "✓✓" : "✓"}
                       </span>
                     )}
                   </div>
                 </div>
-              </div>
+              </article>
             );
           })}
-        </div>
+        </main>
 
-        <div className="p-4 bg-white border-t border-slate-100">
-          <form onSubmit={sendMessage} className="flex gap-3 max-w-3xl mx-auto">
-            <input
-              type="text"
-              placeholder="Skriv ett meddelande..."
-              className="flex-1 bg-slate-100 border-none rounded-2xl px-5 py-4 text-[15px] text-slate-900 outline-none focus:ring-2 focus:ring-blue-500/10 transition-all font-medium"
-              value={newMessage}
-              onChange={(e) => setNewMessage(e.target.value)}
-            />
+        <footer className="p-4 bg-white border-t border-slate-200">
+          <form
+            onSubmit={sendMessage}
+            className="flex gap-3 max-w-3xl mx-auto items-end"
+          >
+            <div className="flex-1 relative">
+              <label htmlFor="message-input" className="sr-only">
+                Skriv meddelande
+              </label>
+              <textarea
+                id="message-input"
+                placeholder="Skriv ett meddelande..."
+                rows={1}
+                className="w-full bg-slate-50 border-2 border-transparent rounded-2xl px-5 py-4 text-[15px] text-slate-950 outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-bold uppercase italic tracking-tight resize-none"
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage(e as any);
+                  }
+                }}
+              />
+            </div>
             <button
               type="submit"
               disabled={sending || !newMessage.trim()}
-              className="bg-blue-600 text-white p-4 rounded-2xl hover:bg-blue-700 transition-all active:scale-90 shadow-lg shadow-blue-600/20 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              aria-label="Skicka meddelande"
+              className="bg-blue-600 text-white p-4 rounded-2xl hover:bg-blue-700 transition-all active:scale-90 shadow-lg shadow-blue-600/20 disabled:opacity-40 focus:ring-4 focus:ring-blue-500 focus:ring-offset-2 cursor-pointer"
             >
               {sending ? (
-                <Loader2 className="h-5 w-5 animate-spin" />
+                <Loader2 className="h-6 w-6 animate-spin" />
               ) : (
-                <Send className="h-5 w-5" />
+                <Send className="h-6 w-6" />
               )}
             </button>
           </form>
-        </div>
+        </footer>
       </div>
     </div>
   );
