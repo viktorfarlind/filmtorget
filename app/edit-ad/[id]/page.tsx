@@ -15,10 +15,12 @@ import {
   CheckCircle2,
   Save,
   Globe,
+  ChevronDown,
 } from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import Link from "next/link";
 import Image from "next/image";
+import { Ad } from "@/types/database";
 
 export default function EditAdPage() {
   const router = useRouter();
@@ -55,27 +57,29 @@ export default function EditAdPage() {
         .eq("id", adId)
         .single();
 
-      if (error || !ad) {
+      const adData = ad as Ad;
+
+      if (error || !adData) {
         alert("Kunde inte hitta annonsen");
         router.push("/");
         return;
       }
 
-      if (ad.user_id !== user.id) {
+      if (adData.user_id !== user.id) {
         alert("Ej behörig.");
         router.push("/");
         return;
       }
 
-      setTitle(ad.title);
-      setPrice(ad.price.toString());
-      setDescription(ad.description || "");
-      setFormat(ad.format);
-      setCondition(ad.condition);
-      setRegion(ad.region_code || "B / 2 (Europa)");
-      setIsSteelbook(ad.is_steelbook);
-      setCurrentImageUrl(ad.image_url);
-      setImagePreview(ad.image_url);
+      setTitle(adData.title);
+      setPrice(adData.price.toString());
+      setDescription(adData.description || "");
+      setFormat(adData.format);
+      setCondition(adData.condition);
+      setRegion(adData.region_code || "B / 2 (Europa)");
+      setIsSteelbook(adData.is_steelbook);
+      setCurrentImageUrl(adData.image_url);
+      setImagePreview(adData.image_url);
       setLoading(false);
     };
 
@@ -138,9 +142,9 @@ export default function EditAdPage() {
 
       router.push(`/ads/${adId}`);
       router.refresh();
-    } catch (error: any) {
-      console.error("Error updating:", error);
-      alert("Fel vid uppdatering: " + error.message);
+    } catch (error) {
+      const err = error as Error;
+      alert("Fel vid uppdatering: " + err.message);
     } finally {
       setSaving(false);
     }
@@ -151,7 +155,6 @@ export default function EditAdPage() {
       <div
         className="min-h-screen flex flex-col items-center justify-center bg-slate-50"
         role="status"
-        aria-live="polite"
       >
         <Loader2 className="animate-spin h-8 w-8 text-blue-600 mb-2" />
         <span className="text-slate-600 font-bold uppercase tracking-widest text-xs">
@@ -162,11 +165,11 @@ export default function EditAdPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 py-12 px-4 sm:px-6">
-      <div className="max-w-3xl mx-auto">
+      <div className="max-w-4xl mx-auto">
         <header className="mb-8">
           <Link
             href={`/ads/${adId}`}
-            className="inline-flex items-center text-sm font-bold text-slate-600 hover:text-blue-600 transition-colors mb-4 group focus:ring-2 focus:ring-blue-500 rounded-lg outline-none"
+            className="inline-flex items-center text-sm font-bold text-slate-600 hover:text-blue-600 transition-colors mb-4 group outline-none"
           >
             <ArrowLeft className="h-4 w-4 mr-2 group-hover:-translate-x-1 transition-transform" />
             Avbryt och gå tillbaka
@@ -180,21 +183,17 @@ export default function EditAdPage() {
           onSubmit={handleSubmit}
           className="flex flex-col lg:flex-row gap-8"
         >
-     
           <div className="lg:w-1/3 flex flex-col gap-6">
             <div className="bg-white p-5 rounded-4xl shadow-sm border border-slate-200">
-              <label
-                htmlFor="image-upload"
-                className="block text-xs font-black uppercase tracking-widest text-slate-500 mb-4"
-              >
+              <label className="block text-xs font-black uppercase tracking-widest text-slate-500 mb-4">
                 Omslagsbild
               </label>
-              <div className="relative aspect-2/3 w-full bg-slate-100 rounded-2xl border-2 border-dashed border-slate-300 overflow-hidden group hover:border-blue-500 transition-all focus-within:ring-2 focus-within:ring-blue-500">
+              <div className="relative aspect-2/3 w-full bg-slate-100 rounded-2xl border-2 border-dashed border-slate-300 overflow-hidden group">
                 {imagePreview ? (
                   <>
                     <Image
                       src={imagePreview}
-                      alt="Förhandsvisning av omslag"
+                      alt="Preview"
                       fill
                       className="object-cover"
                     />
@@ -211,12 +210,10 @@ export default function EditAdPage() {
                   </div>
                 )}
                 <input
-                  id="image-upload"
                   type="file"
                   accept="image/*"
                   onChange={handleImageChange}
                   className="absolute inset-0 opacity-0 cursor-pointer"
-                  aria-label="Ladda upp ny bild"
                 />
               </div>
             </div>
@@ -226,8 +223,8 @@ export default function EditAdPage() {
                 <div
                   className={`w-7 h-7 rounded-xl border-2 flex items-center justify-center transition-all ${
                     isSteelbook
-                      ? "bg-blue-600 border-blue-600 shadow-lg shadow-blue-200"
-                      : "bg-white border-slate-200 group-hover:border-blue-400"
+                      ? "bg-blue-600 border-blue-600 shadow-lg"
+                      : "bg-white border-slate-200"
                   }`}
                 >
                   {isSteelbook && (
@@ -255,53 +252,41 @@ export default function EditAdPage() {
           <div className="lg:w-2/3 space-y-6">
             <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-200 space-y-6">
               <div className="space-y-2">
-                <label
-                  htmlFor="title"
-                  className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-2"
-                >
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">
                   <Type className="h-3.5 w-3.5 text-blue-500" /> Filmtitel
                 </label>
                 <input
-                  id="title"
                   type="text"
                   required
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  className="w-full rounded-2xl border-2 border-slate-100 bg-slate-50 px-5 py-4 text-sm font-bold text-slate-900 focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all uppercase italic tracking-tight"
+                  className="w-full rounded-2xl border-2 border-slate-100 bg-slate-50 px-5 py-4 text-sm font-bold text-slate-900 focus:border-blue-500 outline-none transition-all uppercase italic"
                 />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label
-                    htmlFor="price"
-                    className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-2"
-                  >
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">
                     <DollarSign className="h-3.5 w-3.5 text-blue-500" /> Pris
                     (SEK)
                   </label>
                   <input
-                    id="price"
                     type="number"
                     required
                     value={price}
                     onChange={(e) => setPrice(e.target.value)}
-                    className="w-full rounded-2xl border-2 border-slate-100 bg-slate-50 px-5 py-4 text-sm font-bold text-slate-900 focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all uppercase italic tracking-tight"
+                    className="w-full rounded-2xl border-2 border-slate-100 bg-slate-50 px-5 py-4 text-sm font-bold text-slate-900 focus:border-blue-500 outline-none transition-all uppercase italic"
                   />
                 </div>
                 <div className="space-y-2">
-                  <label
-                    htmlFor="format"
-                    className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-2"
-                  >
+                  <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">
                     <Film className="h-3.5 w-3.5 text-blue-500" /> Format
                   </label>
                   <div className="relative">
                     <select
-                      id="format"
                       value={format}
                       onChange={(e) => setFormat(e.target.value)}
-                      className="w-full appearance-none rounded-2xl border-2 border-slate-100 bg-slate-50 px-5 py-4 text-sm font-black text-slate-900 uppercase italic tracking-tight focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none cursor-pointer"
+                      className="w-full appearance-none rounded-2xl border-2 border-slate-100 bg-slate-50 px-5 py-4 text-sm font-black text-slate-900 uppercase italic focus:border-blue-500 outline-none cursor-pointer"
                     >
                       {["4K UHD", "Blu-ray", "DVD", "VHS"].map((f) => (
                         <option key={f} value={f}>
@@ -309,24 +294,20 @@ export default function EditAdPage() {
                         </option>
                       ))}
                     </select>
-                    <Layers className="absolute right-5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
+                    <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 pointer-events-none" />
                   </div>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <label
-                  htmlFor="region"
-                  className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-2"
-                >
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">
                   <Globe className="h-3.5 w-3.5 text-blue-500" /> Region
                 </label>
                 <div className="relative">
                   <select
-                    id="region"
                     value={region}
                     onChange={(e) => setRegion(e.target.value)}
-                    className="w-full appearance-none rounded-2xl border-2 border-slate-100 bg-slate-50 px-5 py-4 text-sm font-black text-slate-900 uppercase italic tracking-tight focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none cursor-pointer"
+                    className="w-full appearance-none rounded-2xl border-2 border-slate-100 bg-slate-50 px-5 py-4 text-sm font-black text-slate-900 uppercase italic focus:border-blue-500 outline-none cursor-pointer"
                   >
                     <option value="B / 2 (Europa)">B / 2 (Europa)</option>
                     <option value="A / 1 (USA)">A / 1 (USA)</option>
@@ -341,22 +322,16 @@ export default function EditAdPage() {
                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-2 mb-3">
                   <Layers className="h-3.5 w-3.5 text-blue-500" /> Skick
                 </span>
-                <div
-                  className="grid grid-cols-3 gap-3"
-                  role="radiogroup"
-                  aria-label="Välj skick"
-                >
+                <div className="grid grid-cols-3 gap-3">
                   {["Nyskick", "Mycket bra", "Bra"].map((opt) => (
                     <button
                       key={opt}
                       type="button"
                       onClick={() => setCondition(opt)}
-                      aria-checked={condition === opt}
-                      role="radio"
-                      className={`py-4 px-3 rounded-2xl text-[12px] font-black uppercase tracking-tighter border-2 transition-all focus:ring-2 focus:ring-blue-500 outline-none ${
+                      className={`py-4 px-3 rounded-2xl text-[12px] font-black uppercase border-2 transition-all outline-none ${
                         condition === opt
-                          ? "bg-slate-950 text-white border-slate-950 shadow-lg"
-                          : "bg-slate-50 text-slate-600 border-slate-100 hover:border-slate-300"
+                          ? "bg-slate-950 text-white border-slate-950"
+                          : "bg-slate-50 text-slate-600 border-slate-100"
                       }`}
                     >
                       {opt}
@@ -366,26 +341,21 @@ export default function EditAdPage() {
               </div>
 
               <div className="space-y-2">
-                <label
-                  htmlFor="description"
-                  className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-2"
-                >
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">
                   <FileText className="h-3.5 w-3.5 text-blue-500" /> Beskrivning
                 </label>
                 <textarea
-                  id="description"
                   rows={5}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
-                  className="w-full rounded-2xl border-2 border-slate-100 bg-slate-50 px-5 py-4 text-sm font-bold text-slate-900 focus:bg-white focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all resize-none"
-                  placeholder="Beskriv filmen (t.ex. svensk text, skador på fodral...)"
+                  className="w-full rounded-2xl border-2 border-slate-100 bg-slate-50 px-5 py-4 text-sm font-bold text-slate-900 focus:border-blue-500 outline-none transition-all resize-none"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={saving}
-                className="w-full rounded-2xl bg-blue-600 py-5 text-sm font-black text-white uppercase tracking-widest shadow-xl shadow-blue-200 hover:bg-blue-700 active:scale-[0.98] transition-all flex justify-center items-center gap-3 disabled:opacity-50 focus:ring-4 focus:ring-blue-500 outline-none"
+                className="w-full rounded-2xl bg-blue-600 py-5 text-sm font-black text-white uppercase tracking-widest shadow-xl hover:bg-blue-700 disabled:opacity-50 transition-all flex justify-center items-center gap-3"
               >
                 {saving ? (
                   <Loader2 className="h-5 w-5 animate-spin" />
@@ -400,24 +370,5 @@ export default function EditAdPage() {
         </form>
       </div>
     </div>
-  );
-}
-
-function ChevronDown({ className }: { className?: string }) {
-  return (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="3"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={className}
-    >
-      <path d="m6 9 6 6 6-6" />
-    </svg>
   );
 }
