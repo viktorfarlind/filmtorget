@@ -1,8 +1,9 @@
-import { Disc, Clapperboard, Sparkles } from "lucide-react";
+import { Sparkles, Loader2 } from "lucide-react";
 import { supabase } from "@/utils/supabaseClient";
 import AdCard from "@/components/AdCard";
 import HeroSection from "@/components/HeroSection";
-import SortSelect from "@/components/SortSelect";
+import MainAdList from "@/components/MainAdList";
+import { Suspense } from "react";
 
 export const dynamic = "force-dynamic";
 
@@ -13,13 +14,6 @@ type Props = {
 export default async function Home(props: Props) {
   const searchParams = await props.searchParams;
 
-  const formatFilter =
-    typeof searchParams.format === "string" ? searchParams.format : null;
-  const searchQuery =
-    typeof searchParams.q === "string" ? searchParams.q : null;
-  const sortOption =
-    typeof searchParams.sort === "string" ? searchParams.sort : "newest";
-
   const { data: latestAdsData } = await supabase
     .from("ads")
     .select("*")
@@ -28,31 +22,6 @@ export default async function Home(props: Props) {
     .limit(10);
 
   const latestAds = latestAdsData || [];
-
-  let query = supabase.from("ads").select("*").eq("is_sold", false);
-
-  if (formatFilter) query = query.eq("format", formatFilter);
-
-  if (searchQuery) {
-    query = query.or(
-      `title.ilike.%${searchQuery}%,format.ilike.%${searchQuery}%`
-    );
-  }
-
-  switch (sortOption) {
-    case "price_asc":
-      query = query.order("price", { ascending: true });
-      break;
-    case "price_desc":
-      query = query.order("price", { ascending: false });
-      break;
-    case "newest":
-    default:
-      query = query.order("created_at", { ascending: false });
-      break;
-  }
-
-  const { data: mainListAds } = await query;
 
   return (
     <div className="flex flex-col gap-12 pb-24 bg-slate-50 min-h-screen">
@@ -107,54 +76,15 @@ export default async function Home(props: Props) {
           </div>
         </section>
       )}
-
-      <section
-        className="px-4 max-w-6xl mx-auto w-full border-t border-slate-200 pt-12"
-        aria-labelledby="main-list-heading"
+      <Suspense
+        fallback={
+          <div className="w-full h-96 flex items-center justify-center">
+            <Loader2 className="h-8 w-8 text-blue-600 animate-spin" />
+          </div>
+        }
       >
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-6 mb-10">
-          <div>
-            <h2
-              id="main-list-heading"
-              className="font-black text-3xl text-slate-950 flex items-center gap-3 uppercase italic tracking-tighter"
-            >
-              <Clapperboard
-                className="h-8 w-8 text-blue-600"
-                strokeWidth={2.5}
-                aria-hidden="true"
-              />
-              {formatFilter ? `${formatFilter}-filmer` : "Alla filmer"}
-            </h2>
-            <p className="text-slate-600 text-sm mt-2 font-bold uppercase tracking-tight">
-              Visar {mainListAds?.length || 0} aktiva annonser
-            </p>
-          </div>
-          <SortSelect />
-        </div>
-
-        {!mainListAds || mainListAds.length === 0 ? (
-          <div
-            className="text-center py-24 bg-white rounded-[2.5rem] border-2 border-dashed border-slate-200 mx-2"
-            role="status"
-          >
-            <div className="inline-flex bg-slate-50 p-6 rounded-full mb-6">
-              <Disc
-                className="h-12 w-12 text-slate-300 animate-spin-slow"
-                strokeWidth={1}
-              />
-            </div>
-            <p className="text-slate-900 font-black uppercase italic tracking-widest">
-              Inga nya filmer hittades just nu
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-2 gap-y-12 gap-x-4 sm:gap-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-            {mainListAds.map((ad) => (
-              <AdCard key={ad.id} ad={ad} />
-            ))}
-          </div>
-        )}
-      </section>
+        <MainAdList searchParams={searchParams} />
+      </Suspense>
     </div>
   );
 }
