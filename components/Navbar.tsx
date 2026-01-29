@@ -6,7 +6,7 @@ import { Disc, User as UserIcon, Tag, MessageSquare } from "lucide-react";
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/utils/supabaseClient";
 import { useRouter } from "next/navigation";
-import { User } from "@supabase/supabase-js";
+import { User, RealtimeChannel } from "@supabase/supabase-js";
 import { Profile } from "@/types/database";
 
 export default function Navbar() {
@@ -34,6 +34,8 @@ export default function Navbar() {
   }, []);
 
   useEffect(() => {
+    let profileSubscription: RealtimeChannel | null = null;
+
     const initializeNavbar = async () => {
       const {
         data: { session },
@@ -44,6 +46,22 @@ export default function Navbar() {
       if (currentUser) {
         fetchProfile(currentUser.id);
         fetchUnreadCount(currentUser.id);
+
+        profileSubscription = supabase
+          .channel(`navbar-profile-${currentUser.id}`)
+          .on(
+            "postgres_changes",
+            {
+              event: "UPDATE",
+              schema: "public",
+              table: "profiles",
+              filter: `id=eq.${currentUser.id}`,
+            },
+            (payload) => {
+              setProfile(payload.new as Profile);
+            }
+          )
+          .subscribe();
       }
     };
 
@@ -81,6 +99,7 @@ export default function Navbar() {
     return () => {
       authSubscription.unsubscribe();
       supabase.removeChannel(messageChannel);
+      if (profileSubscription) supabase.removeChannel(profileSubscription);
     };
   }, [router, fetchUnreadCount, fetchProfile]);
 
@@ -143,7 +162,9 @@ export default function Navbar() {
                   <div className="h-9 w-9 bg-slate-900 rounded-full flex items-center justify-center border border-white/20 group-hover:border-blue-500 group-focus:ring-2 group-focus:ring-blue-500 transition-all overflow-hidden relative shadow-inner">
                     {profile?.avatar_url ? (
                       <Image
-                        src={profile.avatar_url}
+                        src={`${profile.avatar_url}?t=${new Date(
+                          profile.updated_at
+                        ).getTime()}`}
                         alt=""
                         fill
                         className="object-cover"
