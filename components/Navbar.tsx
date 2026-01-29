@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Film, User, PlusCircle, MessageSquare } from "lucide-react";
+import { Disc, User, Tag, MessageSquare } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/utils/supabaseClient";
 import { useRouter } from "next/navigation";
@@ -18,7 +18,6 @@ export default function Navbar() {
       const {
         data: { session },
       } = await supabase.auth.getSession();
-
       const currentUser = session?.user ?? null;
       setUser(currentUser);
 
@@ -29,7 +28,6 @@ export default function Navbar() {
           .eq("id", currentUser.id)
           .single();
         setProfile(data);
-
         fetchUnreadCount(currentUser.id);
       }
     };
@@ -40,7 +38,6 @@ export default function Navbar() {
         .select("*", { count: "exact", head: true })
         .eq("is_read", false)
         .neq("sender_id", userId);
-
       setUnreadCount(count || 0);
     };
 
@@ -58,7 +55,6 @@ export default function Navbar() {
           .eq("id", currentUser.id)
           .single()
           .then(({ data }) => setProfile(data));
-
         fetchUnreadCount(currentUser.id);
       } else {
         setProfile(null);
@@ -90,78 +86,98 @@ export default function Navbar() {
   }, [router, user?.id]);
 
   return (
-    <nav className="border-b border-slate-800 bg-slate-950 sticky top-0 z-50">
-      <div className="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2 group">
-          <div className="bg-blue-600 p-1.5 rounded-lg group-hover:bg-blue-500 transition-colors">
-            <Film className="h-5 w-5 text-white" />
-          </div>
-          <span className="font-bold text-xl tracking-tight text-white">
-            Filmtorget
-          </span>
-        </Link>
+    <>
+      <div className="h-16 w-full" />
 
-        <div className="flex items-center gap-4">
-          {user ? (
-            <>
-              <Link
-                href="/create-ad"
-                className="hidden sm:flex items-center gap-2 text-sm font-bold text-slate-400 hover:text-white transition-colors"
-              >
-                <PlusCircle className="h-4 w-4" /> Sälj film
-              </Link>
+      <nav
+        className="fixed top-0 left-0 right-0 h-16 border-b border-white/10 bg-slate-950/95 backdrop-blur-md z-[100]"
+        aria-label="Huvudmeny"
+      >
+        <div className="max-w-7xl mx-auto h-full px-4 flex items-center justify-between">
+          <Link
+            href="/"
+            aria-label="Filmtorget Startsida"
+            className="flex items-center gap-2 group transition-transform active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-950 rounded-lg"
+          >
+            <div className="bg-blue-600 p-1.5 rounded-lg -rotate-6 group-hover:rotate-0 transition-all duration-300 shadow-lg shadow-blue-600/20">
+              <Disc
+                className="h-5 w-5 text-white animate-spin-slow"
+                aria-hidden="true"
+              />
+            </div>
+            <span className="text-xl font-black tracking-tighter text-white uppercase italic">
+              Film<span className="text-blue-500 not-italic">torget</span>
+            </span>
+          </Link>
 
-              <Link
-                href="/messages"
-                className="relative p-2 text-slate-400 hover:text-white transition-colors"
-              >
-                <MessageSquare className="h-6 w-6" />
-                {unreadCount > 0 && (
-                  <span className="absolute top-1 right-1 bg-red-600 text-white text-[10px] font-black h-4 min-w-[1rem] px-1 flex items-center justify-center rounded-full border border-slate-950 shadow-sm animate-in zoom-in">
-                    {unreadCount}
-                  </span>
-                )}
-              </Link>
+          <div className="flex items-center gap-2 sm:gap-4">
+            {user ? (
+              <>
+                <Link
+                  href="/create-ad"
+                  className="hidden sm:flex items-center gap-2 bg-white/5 hover:bg-white/10 text-white px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest transition-all border border-white/20 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-950"
+                >
+                  <Tag
+                    className="h-3.5 w-3.5 text-blue-400"
+                    aria-hidden="true"
+                  />{" "}
+                  Sälj film
+                </Link>
 
-              <Link
-                href="/profile"
-                className="flex items-center gap-2 pl-4 border-l border-slate-800"
-              >
-                <div className="h-8 w-8 bg-slate-900 rounded-full flex items-center justify-center border border-slate-700 hover:border-blue-500 transition-colors overflow-hidden relative">
-                  {profile?.avatar_url ? (
-                    <Image
-                      src={profile.avatar_url}
-                      alt="Profil"
-                      fill
-                      className="object-cover"
-                    />
-                  ) : (
-                    <User className="h-4 w-4 text-slate-400" />
+                <Link
+                  href="/messages"
+                  aria-label={`Meddelanden, ${unreadCount} olästa`}
+                  className="relative p-2.5 rounded-xl text-slate-300 hover:text-white hover:bg-white/5 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-950"
+                >
+                  <MessageSquare className="h-5 w-5" aria-hidden="true" />
+                  {unreadCount > 0 && (
+                    <span className="absolute top-2 right-2 bg-blue-600 text-white text-[10px] font-black h-4 min-w-4 px-1 flex items-center justify-center rounded-full border-2 border-slate-950 shadow-sm">
+                      {unreadCount}
+                    </span>
                   )}
-                </div>
-                <span className="text-sm font-bold text-white hidden md:block max-w-[150px] truncate">
-                  {profile?.username || user.email?.split("@")[0]}
-                </span>
-              </Link>
-            </>
-          ) : (
-            <>
-              <Link
-                href="/login"
-                className="text-sm font-bold text-slate-400 hover:text-white transition-colors"
-              >
-                Logga in
-              </Link>
-              <Link
-                href="/create-ad"
-                className="bg-blue-600 text-white px-4 py-2 rounded-full text-sm font-bold hover:bg-blue-500 transition-colors shadow-lg shadow-blue-900/20"
-              >
-                Sälj film
-              </Link>
-            </>
-          )}
+                </Link>
+
+                <Link
+                  href="/profile"
+                  aria-label="Gå till din profil"
+                  className="flex items-center gap-3 pl-2 sm:pl-4 sm:border-l border-white/10 focus:outline-none group"
+                >
+                  <div className="h-9 w-9 bg-slate-900 rounded-full flex items-center justify-center border border-white/20 group-hover:border-blue-500 group-focus:ring-2 group-focus:ring-blue-500 group-focus:ring-offset-2 group-focus:ring-offset-slate-950 transition-all overflow-hidden relative shadow-inner">
+                    {profile?.avatar_url ? (
+                      <Image
+                        src={profile.avatar_url}
+                        alt=""
+                        fill
+                        className="object-cover"
+                      />
+                    ) : (
+                      <User
+                        className="h-5 w-5 text-slate-400"
+                        aria-hidden="true"
+                      />
+                    )}
+                  </div>
+                </Link>
+              </>
+            ) : (
+              <div className="flex items-center gap-3">
+                <Link
+                  href="/login"
+                  className="text-xs font-bold uppercase tracking-widest text-slate-300 hover:text-white transition-colors p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-950 rounded-lg"
+                >
+                  Logga in
+                </Link>
+                <Link
+                  href="/login?view=signup"
+                  className="bg-blue-600 text-white px-5 py-2.5 rounded-full text-xs font-bold uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-950"
+                >
+                  Kom igång
+                </Link>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
-    </nav>
+      </nav>
+    </>
   );
 }
