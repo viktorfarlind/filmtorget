@@ -2,19 +2,39 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Disc, User, Tag, MessageSquare } from "lucide-react";
-import { useEffect, useState } from "react";
+import { Disc, User as UserIcon, Tag, MessageSquare } from "lucide-react";
+import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/utils/supabaseClient";
 import { useRouter } from "next/navigation";
+import { User } from "@supabase/supabase-js";
+import { Profile } from "@/types/database";
 
 export default function Navbar() {
   const router = useRouter();
-  const [user, setUser] = useState<any>(null);
-  const [profile, setProfile] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [unreadCount, setUnreadCount] = useState(0);
 
+  const fetchUnreadCount = useCallback(async (userId: string) => {
+    const { count } = await supabase
+      .from("messages")
+      .select("*", { count: "exact", head: true })
+      .eq("is_read", false)
+      .neq("sender_id", userId);
+    setUnreadCount(count || 0);
+  }, []);
+
+  const fetchProfile = useCallback(async (userId: string) => {
+    const { data } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", userId)
+      .single();
+    if (data) setProfile(data as Profile);
+  }, []);
+
   useEffect(() => {
-    const fetchUserData = async () => {
+    const initializeNavbar = async () => {
       const {
         data: { session },
       } = await supabase.auth.getSession();
@@ -22,44 +42,26 @@ export default function Navbar() {
       setUser(currentUser);
 
       if (currentUser) {
-        const { data } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", currentUser.id)
-          .single();
-        setProfile(data);
+        fetchProfile(currentUser.id);
         fetchUnreadCount(currentUser.id);
       }
     };
 
-    const fetchUnreadCount = async (userId: string) => {
-      const { count } = await supabase
-        .from("messages")
-        .select("*", { count: "exact", head: true })
-        .eq("is_read", false)
-        .neq("sender_id", userId);
-      setUnreadCount(count || 0);
-    };
-
-    fetchUserData();
+    initializeNavbar();
 
     const {
       data: { subscription: authSubscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       const currentUser = session?.user ?? null;
       setUser(currentUser);
+
       if (currentUser) {
-        supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", currentUser.id)
-          .single()
-          .then(({ data }) => setProfile(data));
+        fetchProfile(currentUser.id);
         fetchUnreadCount(currentUser.id);
       } else {
         setProfile(null);
         setUnreadCount(0);
-        if (_event === "SIGNED_OUT") router.refresh();
+        if (event === "SIGNED_OUT") router.refresh();
       }
     });
 
@@ -69,12 +71,9 @@ export default function Navbar() {
         "postgres_changes",
         { event: "*", schema: "public", table: "messages" },
         () => {
-          if (user?.id) fetchUnreadCount(user.id);
-          else {
-            supabase.auth.getSession().then(({ data }) => {
-              if (data.session?.user) fetchUnreadCount(data.session.user.id);
-            });
-          }
+          supabase.auth.getSession().then(({ data }) => {
+            if (data.session?.user) fetchUnreadCount(data.session.user.id);
+          });
         }
       )
       .subscribe();
@@ -83,12 +82,11 @@ export default function Navbar() {
       authSubscription.unsubscribe();
       supabase.removeChannel(messageChannel);
     };
-  }, [router, user?.id]);
+  }, [router, fetchUnreadCount, fetchProfile]);
 
   return (
     <>
       <div className="h-16 w-full" />
-
       <nav
         className="fixed top-0 left-0 right-0 h-16 border-b border-white/10 bg-slate-950/95 backdrop-blur-md z-[100]"
         aria-label="Huvudmeny"
@@ -115,19 +113,19 @@ export default function Navbar() {
               <>
                 <Link
                   href="/create-ad"
-                  className="hidden sm:flex items-center gap-2 bg-white/5 hover:bg-white/10 text-white px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest transition-all border border-white/20 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-950"
+                  className="hidden sm:flex items-center gap-2 bg-white/5 hover:bg-white/10 text-white px-4 py-2 rounded-full text-xs font-bold uppercase tracking-widest transition-all border border-white/20 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <Tag
                     className="h-3.5 w-3.5 text-blue-400"
                     aria-hidden="true"
-                  />{" "}
+                  />
                   Sälj film
                 </Link>
 
                 <Link
                   href="/messages"
                   aria-label={`Meddelanden, ${unreadCount} olästa`}
-                  className="relative p-2.5 rounded-xl text-slate-300 hover:text-white hover:bg-white/5 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-950"
+                  className="relative p-2.5 rounded-xl text-slate-300 hover:text-white hover:bg-white/5 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <MessageSquare className="h-5 w-5" aria-hidden="true" />
                   {unreadCount > 0 && (
@@ -142,7 +140,7 @@ export default function Navbar() {
                   aria-label="Gå till din profil"
                   className="flex items-center gap-3 pl-2 sm:pl-4 sm:border-l border-white/10 focus:outline-none group"
                 >
-                  <div className="h-9 w-9 bg-slate-900 rounded-full flex items-center justify-center border border-white/20 group-hover:border-blue-500 group-focus:ring-2 group-focus:ring-blue-500 group-focus:ring-offset-2 group-focus:ring-offset-slate-950 transition-all overflow-hidden relative shadow-inner">
+                  <div className="h-9 w-9 bg-slate-900 rounded-full flex items-center justify-center border border-white/20 group-hover:border-blue-500 group-focus:ring-2 group-focus:ring-blue-500 transition-all overflow-hidden relative shadow-inner">
                     {profile?.avatar_url ? (
                       <Image
                         src={profile.avatar_url}
@@ -151,7 +149,7 @@ export default function Navbar() {
                         className="object-cover"
                       />
                     ) : (
-                      <User
+                      <UserIcon
                         className="h-5 w-5 text-slate-400"
                         aria-hidden="true"
                       />
@@ -163,13 +161,13 @@ export default function Navbar() {
               <div className="flex items-center gap-3">
                 <Link
                   href="/login"
-                  className="text-xs font-bold uppercase tracking-widest text-slate-300 hover:text-white transition-colors p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-950 rounded-lg"
+                  className="text-xs font-bold uppercase tracking-widest text-slate-300 hover:text-white transition-colors p-2 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg"
                 >
                   Logga in
                 </Link>
                 <Link
                   href="/login?view=signup"
-                  className="bg-blue-600 text-white px-5 py-2.5 rounded-full text-xs font-bold uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-950"
+                  className="bg-blue-600 text-white px-5 py-2.5 rounded-full text-xs font-bold uppercase tracking-widest hover:bg-blue-700 transition-all shadow-lg active:scale-95 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   Kom igång
                 </Link>
