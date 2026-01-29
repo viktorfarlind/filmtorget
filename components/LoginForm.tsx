@@ -45,8 +45,9 @@ export default function LoginForm() {
         router.push("/profile");
         router.refresh();
       }
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      const authError = err as Error;
+      setError(authError.message);
     } finally {
       setLoading(false);
     }
@@ -81,7 +82,7 @@ export default function LoginForm() {
             type="email"
             placeholder="E-postadress"
             aria-label="E-postadress"
-            className="w-full bg-slate-900 border border-white/20 rounded-2xl py-4 pl-12 pr-4 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-950 transition-all font-medium"
+            className="w-full bg-slate-900 border border-white/20 rounded-2xl py-4 px-12 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all font-medium"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
@@ -97,7 +98,7 @@ export default function LoginForm() {
             type="password"
             placeholder="Lösenord"
             aria-label="Lösenord"
-            className="w-full bg-slate-900 border border-white/20 rounded-2xl py-4 pl-12 pr-4 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-950 transition-all font-medium"
+            className="w-full bg-slate-900 border border-white/20 rounded-2xl py-4 px-12 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all font-medium"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
@@ -107,7 +108,7 @@ export default function LoginForm() {
         {error && (
           <div
             role="alert"
-            className="bg-red-500/10 border border-red-500/40 text-red-400 text-xs py-3 px-4 rounded-xl font-bold animate-in fade-in zoom-in duration-300"
+            className="bg-red-500/10 border border-red-500/40 text-red-400 text-xs py-3 px-4 rounded-xl font-bold"
           >
             {error}
           </div>
@@ -116,7 +117,7 @@ export default function LoginForm() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black uppercase tracking-widest py-4 rounded-2xl transition-all shadow-lg shadow-blue-600/20 active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-slate-950"
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black uppercase tracking-widest py-4 rounded-2xl transition-all shadow-lg active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer"
         >
           {loading ? (
             <Loader2 className="h-5 w-5 animate-spin" />
@@ -132,11 +133,11 @@ export default function LoginForm() {
       <div className="mt-8 text-center border-t border-white/10 pt-6">
         <button
           onClick={() => setIsSignUp(!isSignUp)}
-          className="text-slate-300 hover:text-white text-sm font-bold transition-colors cursor-pointer focus:outline-none focus:underline decoration-blue-500 underline-offset-4"
+          className="text-slate-300 hover:text-white text-sm font-bold transition-colors cursor-pointer"
         >
           {isSignUp
-            ? "Har du redan ett konto? Logga in"
-            : "Inget konto? Skapa ett här"}
+            ? "Har du redan ett konto? Logga in!"
+            : "Inget konto? Skapa ett här!"}
         </button>
       </div>
     </div>
