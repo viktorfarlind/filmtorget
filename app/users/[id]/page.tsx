@@ -26,6 +26,7 @@ export default async function PublicProfilePage(props: Props) {
     .from("ads")
     .select("*")
     .eq("user_id", params.id)
+    .order("is_sold", { ascending: true })
     .order("created_at", { ascending: false });
 
   const { data: reviews } = await supabase
@@ -54,6 +55,8 @@ export default async function PublicProfilePage(props: Props) {
         year: "numeric",
       })
     : "en tid tillbaka";
+
+  const activeAdsCount = ads?.filter((ad) => !ad.is_sold).length || 0;
 
   return (
     <div className="min-h-screen bg-slate-50 pb-32">
@@ -107,7 +110,7 @@ export default async function PublicProfilePage(props: Props) {
             <div className="flex flex-wrap items-center justify-center gap-3 text-slate-400 text-sm font-medium">
               <div className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full border border-white/10">
                 <Package className="h-4 w-4 text-blue-500" />
-                {ads?.length || 0} {ads?.length === 1 ? "annons" : "annonser"}
+                {activeAdsCount} aktiva annonser
               </div>
               <div className="flex items-center gap-2 bg-white/5 px-4 py-2 rounded-full border border-white/10">
                 <Calendar className="h-4 w-4 text-blue-500" />
