@@ -4,52 +4,61 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/utils/supabaseClient";
 import Image from "next/image";
-import { LogOut, Plus, User, Loader2, Pencil, Star } from "lucide-react";
+import {
+  LogOut,
+  Plus,
+  User as UserIcon,
+  Loader2,
+  Pencil,
+  Star,
+} from "lucide-react";
 import { v4 as uuidv4 } from "uuid";
 import PublicProfileContent from "@/components/PublicProfileContent";
 import Link from "next/link";
+import { User } from "@supabase/supabase-js";
+import { Profile, Ad } from "@/types/database";
 
 export default function ProfilePage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
-  const [user, setUser] = useState<any>(null);
-  const [profile, setProfile] = useState<any>(null);
-  const [myAds, setMyAds] = useState<any[]>([]);
+  const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [myAds, setMyAds] = useState<Ad[]>([]);
   const [reviewStats, setReviewStats] = useState({ count: 0, average: 0 });
 
   useEffect(() => {
     const getData = async () => {
       const {
-        data: { user },
+        data: { user: authUser },
       } = await supabase.auth.getUser();
 
-      if (!user) {
+      if (!authUser) {
         router.push("/login");
         return;
       }
-      setUser(user);
+      setUser(authUser);
 
       const { data: profileData } = await supabase
         .from("profiles")
         .select("*")
-        .eq("id", user.id)
+        .eq("id", authUser.id)
         .single();
 
-      setProfile(profileData);
+      if (profileData) setProfile(profileData as Profile);
 
       const { data: ads } = await supabase
         .from("ads")
         .select("*")
-        .eq("user_id", user.id)
+        .eq("user_id", authUser.id)
         .order("created_at", { ascending: false });
 
-      if (ads) setMyAds(ads);
+      if (ads) setMyAds(ads as Ad[]);
 
       const { data: reviews } = await supabase
         .from("reviews")
         .select("rating")
-        .eq("receiver_id", user.id);
+        .eq("receiver_id", authUser.id);
 
       if (reviews && reviews.length > 0) {
         const avg = Math.round(
@@ -68,7 +77,7 @@ export default function ProfilePage() {
     try {
       setUploading(true);
       const file = e.target.files?.[0];
-      if (!file) return;
+      if (!file || !user) return;
 
       const fileExt = file.name.split(".").pop();
       const fileName = `${user.id}/${uuidv4()}.${fileExt}`;
@@ -88,10 +97,13 @@ export default function ProfilePage() {
         .update({ avatar_url: publicUrl })
         .eq("id", user.id);
 
-      setProfile({ ...profile, avatar_url: publicUrl });
+      if (profile) {
+        setProfile({ ...profile, avatar_url: publicUrl });
+      }
       router.refresh();
-    } catch (error: any) {
-      alert("Kunde inte ladda upp bilden: " + error.message);
+    } catch (error) {
+      const err = error as Error;
+      alert("Kunde inte ladda upp bilden: " + err.message);
     } finally {
       setUploading(false);
     }
@@ -133,7 +145,7 @@ export default function ProfilePage() {
                     className="object-cover"
                   />
                 ) : (
-                  <User
+                  <UserIcon
                     className="h-12 w-12 text-slate-500"
                     aria-hidden="true"
                   />
@@ -165,7 +177,7 @@ export default function ProfilePage() {
             </div>
 
             <h1 className="text-4xl font-black tracking-tighter mb-2 uppercase italic">
-              {profile?.username || user.email?.split("@")[0]}
+              {profile?.username || user?.email?.split("@")[0]}
             </h1>
 
             <div
@@ -179,7 +191,7 @@ export default function ProfilePage() {
                     className={`h-5 w-5 ${
                       reviewStats.average >= star
                         ? "text-amber-400 fill-amber-400"
-                        : "text-slate-800" // Mörkare för bättre kontrast mot mörk bakgrund
+                        : "text-slate-800"
                     }`}
                     aria-hidden="true"
                   />
@@ -193,7 +205,7 @@ export default function ProfilePage() {
             </div>
 
             <p className="text-slate-300 text-sm mb-8 font-bold uppercase tracking-tight">
-              {user.email}
+              {user?.email}
             </p>
 
             <div className="flex flex-wrap gap-3 justify-center mb-10">
