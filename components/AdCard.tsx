@@ -14,14 +14,20 @@ interface AdProps {
   created_at: string;
 }
 
-export default function AdCard({ ad }: { ad: AdProps }) {
+export default function AdCard({
+  ad,
+  priority = false,
+}: {
+  ad: AdProps;
+  priority?: boolean;
+}) {
   const getFormatStyle = (format: string) => {
     switch (format) {
       case "Blu-ray":
         return {
           border: "border-blue-500",
           shadow: "hover:shadow-blue-500/20",
-          badge: "bg-blue-100 text-blue-800 border-blue-200",
+          badge: "bg-blue-100 text-blue-900 border-blue-300",
         };
       case "4K UHD":
         return {
@@ -33,19 +39,19 @@ export default function AdCard({ ad }: { ad: AdProps }) {
         return {
           border: "border-slate-400",
           shadow: "hover:shadow-slate-400/20",
-          badge: "bg-slate-100 text-slate-800 border-slate-300",
+          badge: "bg-slate-200 text-slate-900 border-slate-300",
         };
       case "VHS":
         return {
           border: "border-orange-600",
           shadow: "hover:shadow-orange-500/20",
-          badge: "bg-orange-100 text-orange-900 border-orange-200",
+          badge: "bg-orange-100 text-orange-950 border-orange-300",
         };
       default:
         return {
           border: "border-slate-200",
           shadow: "hover:shadow-slate-300/20",
-          badge: "bg-slate-100 text-slate-700 border-slate-200",
+          badge: "bg-slate-200 text-slate-900 border-slate-300",
         };
     }
   };
@@ -72,11 +78,12 @@ export default function AdCard({ ad }: { ad: AdProps }) {
               src={ad.image_url}
               alt={`Omslagsbild för ${ad.title}`}
               fill
+              priority={priority}
               className="object-cover transition-transform duration-500 group-hover:scale-105"
               sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 20vw"
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-slate-300">
+            <div className="w-full h-full flex items-center justify-center text-slate-400">
               <Disc
                 className="h-10 w-10 animate-spin-slow"
                 aria-hidden="true"
@@ -85,7 +92,7 @@ export default function AdCard({ ad }: { ad: AdProps }) {
           )}
 
           {ad.is_steelbook && (
-            <div className="absolute top-0 left-0 w-full bg-linear-to-b from-black/70 to-transparent p-2">
+            <div className="absolute top-0 left-0 w-full bg-linear-to-b from-black/80 to-transparent p-2">
               <span className="inline-block bg-amber-400 text-amber-950 text-[10px] font-black px-2 py-0.5 rounded shadow-sm uppercase tracking-wider border border-amber-300">
                 Steelbook
               </span>
@@ -102,17 +109,17 @@ export default function AdCard({ ad }: { ad: AdProps }) {
         </div>
 
         <div className="p-3 flex flex-col gap-2 grow">
-          <h3 className="font-bold text-slate-900 text-sm leading-tight group-hover:text-blue-600 transition-colors line-clamp-2">
+          <h3 className="font-bold text-slate-900 text-sm leading-tight group-hover:text-blue-700 transition-colors line-clamp-2">
             {ad.title}
           </h3>
 
-          <div className="flex items-center justify-between mt-auto pt-2 border-t border-slate-100">
+          <div className="flex items-center justify-between mt-auto pt-2 border-t border-slate-200">
             <span
               className={`text-[10px] font-bold px-1.5 py-0.5 rounded border uppercase tracking-tighter ${style.badge}`}
             >
               {ad.format}
             </span>
-            <span className="text-[10px] font-bold text-slate-500 uppercase">
+            <span className="text-[10px] font-bold text-slate-600 uppercase italic">
               {new Date(ad.created_at).toLocaleDateString("sv-SE", {
                 month: "short",
                 day: "numeric",
