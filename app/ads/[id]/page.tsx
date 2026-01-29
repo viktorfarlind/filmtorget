@@ -90,7 +90,7 @@ export default function AdDetailsPage() {
         >
           <Image src={ad.image_url} alt="" fill className="object-cover" />
         </div>
-        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-white" />
+        <div className="absolute inset-0 bg-linear-to-b from-black/30 via-transparent to-white" />
         <div className="absolute top-6 left-4 z-10">
           <button
             onClick={() => router.back()}
@@ -103,9 +103,9 @@ export default function AdDetailsPage() {
 
       <div className="max-w-4xl mx-auto px-4 -mt-32 relative z-10">
         <div className="flex flex-col md:flex-row gap-8">
-          <div className="w-full md:w-1/3 flex-shrink-0">
+          <div className="w-full md:w-1/3 shrink-0">
             <div
-              className={`aspect-[2/3] relative rounded-lg shadow-2xl overflow-hidden border-4 border-white bg-slate-200 transition-all duration-500 ${
+              className={`aspect-2/3 relative rounded-lg shadow-2xl overflow-hidden border-4 border-white bg-slate-200 transition-all duration-500 ${
                 ad.is_sold ? "grayscale opacity-75" : ""
               }`}
             >
