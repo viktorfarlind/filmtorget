@@ -69,7 +69,7 @@ export default function ContactSellerButton({
     <button
       onClick={handleContact}
       disabled={loading}
-      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 px-6 rounded-full shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 px-6 rounded-full shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
     >
       {loading ? (
         <Loader2 className="w-5 h-5 animate-spin" />
