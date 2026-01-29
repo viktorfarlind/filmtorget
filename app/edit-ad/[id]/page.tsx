@@ -353,7 +353,7 @@ export default function EditAdPage() {
                       onClick={() => setCondition(opt)}
                       aria-checked={condition === opt}
                       role="radio"
-                      className={`py-4 px-3 rounded-2xl text-[10px] font-black uppercase tracking-tighter border-2 transition-all focus:ring-2 focus:ring-blue-500 outline-none ${
+                      className={`py-4 px-3 rounded-2xl text-[12px] font-black uppercase tracking-tighter border-2 transition-all focus:ring-2 focus:ring-blue-500 outline-none ${
                         condition === opt
                           ? "bg-slate-950 text-white border-slate-950 shadow-lg"
                           : "bg-slate-50 text-slate-600 border-slate-100 hover:border-slate-300"
