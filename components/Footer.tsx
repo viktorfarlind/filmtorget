@@ -107,35 +107,38 @@ export default function Footer() {
             <div className="flex gap-4 mb-4">
               <a
                 href="#"
+                aria-label="Följ oss på Twitter"
                 className="bg-slate-900 p-2 rounded-full hover:bg-blue-600 hover:text-white transition-all cursor-pointer"
               >
                 <Twitter className="h-5 w-5" />
               </a>
               <a
                 href="#"
+                aria-label="Besök vår GitHub"
                 className="bg-slate-900 p-2 rounded-full hover:bg-black hover:text-white transition-all cursor-pointer"
               >
                 <Github className="h-5 w-5" />
               </a>
               <a
                 href="mailto:hej@filmtorget.se"
+                aria-label="Skicka e-post till oss"
                 className="bg-slate-900 p-2 rounded-full hover:bg-red-500 hover:text-white transition-all cursor-pointer"
               >
                 <Mail className="h-5 w-5" />
               </a>
             </div>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-slate-400">
               Prenumerera på nyhetsbrevet för att inte missa sällsynta släpp.
             </p>
           </div>
         </div>
 
         <div className="pt-8 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-xs text-slate-600">
+          <p className="text-xs text-slate-400">
             &copy; {new Date().getFullYear()} Filmtorget. Alla rättigheter
             reserverade.
           </p>
-          <p className="text-xs flex items-center gap-1 text-slate-500">
+          <p className="text-xs flex items-center gap-1 text-slate-400">
             Skapat med <Heart className="h-3 w-3 text-red-500 fill-red-500" />{" "}
             av Viktor Färlind
           </p>
