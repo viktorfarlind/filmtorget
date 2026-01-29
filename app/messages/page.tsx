@@ -31,7 +31,7 @@ export default function MessagesPage() {
           `
           id,
           created_at,
-          ad:ads(title, image_url),
+          ad:ads(title, image_url, is_sold),
           buyer:profiles!conversations_buyer_id_fkey(id, username, avatar_url),
           seller:profiles!conversations_seller_id_fkey(id, username, avatar_url),
           messages(content, created_at, sender_id, is_read)
@@ -40,7 +40,6 @@ export default function MessagesPage() {
         .or(`buyer_id.eq.${user.id},seller_id.eq.${user.id}`);
 
       if (data) {
-      
         const formatted = data
           .map((conv: any) => {
             const lastMsg = conv.messages?.sort(
@@ -85,9 +84,9 @@ export default function MessagesPage() {
     <div className="min-h-screen bg-slate-50 pb-24 font-sans text-slate-900">
       <div className="bg-white border-b border-slate-200 pt-12 pb-8">
         <div className="max-w-4xl mx-auto px-4">
-          <h1 className="text-xl font-black flex items-center gap-3">
-            <MessageSquare className="h-8 w-8 text-blue-600" />
-            Inkorg
+          <h1 className="text-2xl font-black flex items-center gap-3 tracking-tight text-slate-900">
+            <MessageSquare className="h-7 w-7 text-blue-600" />
+            Meddelanden
           </h1>
         </div>
       </div>
@@ -99,13 +98,13 @@ export default function MessagesPage() {
               <Inbox className="h-10 w-10 text-slate-300" />
             </div>
             <h2 className="text-xl font-bold mb-2">Inkorgen är tom</h2>
-            <p className="text-slate-500 mb-8 max-w-xs mx-auto">
+            <p className="text-slate-500 mb-8 max-w-xs mx-auto text-sm">
               Här ser du dina konversationer när du kontaktat en säljare eller
               lagt upp en annons.
             </p>
             <Link
               href="/"
-              className="bg-blue-600 text-white px-8 py-3 rounded-full font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20"
+              className="bg-blue-600 text-white px-8 py-3 rounded-full font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-600/20 text-sm"
             >
               Bläddra bland filmer
             </Link>
@@ -116,12 +115,13 @@ export default function MessagesPage() {
               const isBuyer = userId === conv.buyer.id;
               const otherUser = isBuyer ? conv.seller : conv.buyer;
               const hasUnread = conv.unreadCount > 0;
+              const isSold = conv.ad.is_sold;
 
               return (
                 <Link
                   key={conv.id}
                   href={`/messages/${conv.id}`}
-                  className={`group bg-white p-5 rounded-3xl border transition-all flex items-center gap-4 active:scale-[0.98] ${
+                  className={`group bg-white p-4 sm:p-5 rounded-3xl border transition-all flex items-center gap-4 active:scale-[0.98] ${
                     hasUnread
                       ? "border-blue-200 ring-1 ring-blue-100 shadow-md"
                       : "border-slate-200 hover:border-blue-400"
@@ -132,21 +132,39 @@ export default function MessagesPage() {
                       src={conv.ad.image_url}
                       alt={conv.ad.title}
                       fill
-                      className="object-cover"
+                      className={`object-cover ${
+                        isSold ? "grayscale opacity-50" : ""
+                      }`}
                     />
+                    {isSold && (
+                      <div className="absolute inset-0 bg-slate-900/40 flex items-center justify-center">
+                        <span className="text-[8px] bg-white text-slate-900 font-black px-1 rounded-sm rotate-[-10deg] shadow-sm uppercase">
+                          Såld
+                        </span>
+                      </div>
+                    )}
                   </div>
 
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between mb-0.5">
-                      <div className="flex items-center gap-2">
-                        <span className="font-black text-slate-900 truncate">
+                    <div className="flex items-center justify-between mb-1">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span
+                          className={`font-black truncate text-[15px] ${
+                            isSold ? "text-slate-400" : "text-slate-900"
+                          }`}
+                        >
                           {conv.ad.title}
                         </span>
+                        {isSold && (
+                          <span className="bg-emerald-100 text-emerald-700 text-[9px] font-black px-1.5 py-0.5 rounded flex-shrink-0 uppercase">
+                            Såld
+                          </span>
+                        )}
                         {hasUnread && (
-                          <span className="h-2 w-2 bg-blue-600 rounded-full animate-pulse" />
+                          <span className="h-2 w-2 bg-blue-600 rounded-full animate-pulse flex-shrink-0" />
                         )}
                       </div>
-                      <span className="text-[10px] font-bold text-slate-400 uppercase">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase ml-2 flex-shrink-0">
                         {conv.lastMsg
                           ? new Date(
                               conv.lastMsg.created_at
@@ -155,8 +173,8 @@ export default function MessagesPage() {
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-2 mb-1">
-                      <div className="h-5 w-5 rounded-full bg-slate-200 relative overflow-hidden flex-shrink-0">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <div className="h-5 w-5 rounded-full bg-slate-100 relative overflow-hidden flex-shrink-0 border border-slate-200">
                         {otherUser.avatar_url ? (
                           <Image
                             src={otherUser.avatar_url}
@@ -168,18 +186,9 @@ export default function MessagesPage() {
                           <User className="p-1 text-slate-400" />
                         )}
                       </div>
-                      <p className="text-sm text-slate-700 font-bold truncate">
+                      <p className="text-[13px] text-slate-600 font-bold truncate">
                         {otherUser.username}
                       </p>
-                      <span
-                        className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded ${
-                          isBuyer
-                            ? "bg-blue-50 text-blue-600"
-                            : "bg-green-50 text-green-600"
-                        }`}
-                      >
-                        {isBuyer ? "Köper" : "Säljer"}
-                      </span>
                     </div>
 
                     <p
