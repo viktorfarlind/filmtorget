@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { Film, User, PlusCircle } from "lucide-react";
+import { Film, User, PlusCircle, MessageSquare } from "lucide-react";
 import { useEffect, useState } from "react";
 import { supabase } from "@/utils/supabaseClient";
 import { useRouter } from "next/navigation";
@@ -11,46 +11,83 @@ export default function Navbar() {
   const router = useRouter();
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     const fetchUserData = async () => {
       const {
         data: { session },
       } = await supabase.auth.getSession();
-      setUser(session?.user ?? null);
 
-      if (session?.user) {
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+
+      if (currentUser) {
         const { data } = await supabase
           .from("profiles")
           .select("*")
-          .eq("id", session.user.id)
+          .eq("id", currentUser.id)
           .single();
-
         setProfile(data);
+
+        fetchUnreadCount(currentUser.id);
       }
+    };
+
+    const fetchUnreadCount = async (userId: string) => {
+      const { count } = await supabase
+        .from("messages")
+        .select("*", { count: "exact", head: true })
+        .eq("is_read", false)
+        .neq("sender_id", userId);
+
+      setUnreadCount(count || 0);
     };
 
     fetchUserData();
 
     const {
-      data: { subscription },
+      data: { subscription: authSubscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      if (session?.user) {
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+      if (currentUser) {
         supabase
           .from("profiles")
           .select("*")
-          .eq("id", session.user.id)
+          .eq("id", currentUser.id)
           .single()
           .then(({ data }) => setProfile(data));
+
+        fetchUnreadCount(currentUser.id);
       } else {
         setProfile(null);
+        setUnreadCount(0);
         if (_event === "SIGNED_OUT") router.refresh();
       }
     });
 
-    return () => subscription.unsubscribe();
-  }, [router]);
+    const messageChannel = supabase
+      .channel("navbar-messages")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "messages" },
+        () => {
+          if (user?.id) fetchUnreadCount(user.id);
+          else {
+            supabase.auth.getSession().then(({ data }) => {
+              if (data.session?.user) fetchUnreadCount(data.session.user.id);
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      authSubscription.unsubscribe();
+      supabase.removeChannel(messageChannel);
+    };
+  }, [router, user?.id]);
 
   return (
     <nav className="border-b border-slate-800 bg-slate-950 sticky top-0 z-50">
@@ -72,6 +109,18 @@ export default function Navbar() {
                 className="hidden sm:flex items-center gap-2 text-sm font-bold text-slate-400 hover:text-white transition-colors"
               >
                 <PlusCircle className="h-4 w-4" /> Sälj film
+              </Link>
+
+              <Link
+                href="/messages"
+                className="relative p-2 text-slate-400 hover:text-white transition-colors"
+              >
+                <MessageSquare className="h-6 w-6" />
+                {unreadCount > 0 && (
+                  <span className="absolute top-1 right-1 bg-red-600 text-white text-[10px] font-black h-4 min-w-[1rem] px-1 flex items-center justify-center rounded-full border border-slate-950 shadow-sm animate-in zoom-in">
+                    {unreadCount}
+                  </span>
+                )}
               </Link>
 
               <Link
