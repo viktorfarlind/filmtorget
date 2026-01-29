@@ -264,7 +264,7 @@ export default function AdDetailsPage() {
         <div className="max-w-4xl mx-auto flex items-center justify-between gap-4">
           <div className="hidden sm:block">
             <p className="text-[10px] text-slate-500 uppercase font-black tracking-widest mb-1">
-              Pris inkl. frakt?
+              Pris
             </p>
             <p
               className={`text-3xl font-black italic tracking-tighter transition-colors duration-500 ${
