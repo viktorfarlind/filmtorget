@@ -62,7 +62,7 @@ export default function PublicProfileContent({
   }, [userId]);
 
   const processedAds = useMemo(() => {
-    let filtered = initialAds.filter((ad) => {
+    const filtered = initialAds.filter((ad) => {
       const matchesSearch = ad.title
         .toLowerCase()
         .includes(searchTerm.toLowerCase());
@@ -318,7 +318,7 @@ export default function PublicProfileContent({
                         </time>
                       </div>
                       <p className="text-slate-800 leading-relaxed font-bold italic text-base bg-white/50 p-4 rounded-2xl border border-white">
-                        "{review.comment}"
+                        &quot;{review.comment}&quot;
                       </p>
                     </article>
                   ))}
