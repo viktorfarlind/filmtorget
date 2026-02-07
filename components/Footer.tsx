@@ -21,7 +21,7 @@ export default function Footer() {
               </span>
             </Link>
             <p className="text-sm leading-relaxed mb-4">
-              Sveriges dedikerade marknadsplats för filmsamlare. Köp, sälj och
+              Sveriges främsta marknadsplats för filmnördar. Köp, sälj och
               hitta limiterade utgåvor tryggt och enkelt.
             </p>
           </div>
