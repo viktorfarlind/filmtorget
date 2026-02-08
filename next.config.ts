@@ -1,17 +1,32 @@
 /** @type {import('next').NextConfig} */
+
+const cspHeader = `
+    default-src 'self';
+    script-src 'self' 'unsafe-eval' 'unsafe-inline';
+    style-src 'self' 'unsafe-inline';
+    img-src 'self' blob: data: *.supabase.co;
+    font-src 'self';
+    object-src 'none';
+    base-uri 'self';
+    form-action 'self';
+    frame-ancestors 'none';
+    connect-src 'self' *.supabase.co;
+`.replace(/\s{2,}/g, ' ').trim();
+
 const nextConfig = {
-  images: {
-    remotePatterns: [
+  async headers() {
+    return [
       {
-        protocol: "https",
-        hostname: "images.unsplash.com",
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'Content-Security-Policy',
+            value: cspHeader,
+          },
+        ],
       },
-      {
-        protocol: "https",
-        hostname: "**.supabase.co",
-      },
-    ],
+    ];
   },
 };
 
-export default nextConfig;
+module.exports = nextConfig;
