@@ -2,8 +2,6 @@
 
 En nischad C2C-marknadsplats för fysisk samlarfilm, utvecklad som examensarbete inom Frontendutveckling.
 
---
-
 Applikationen är driftsatt och kan testas via länken nedan.
 
 ## [Live Demo](https://filmtorget-wxyh.vercel.app/)
