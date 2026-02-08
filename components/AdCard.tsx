@@ -4,6 +4,11 @@ import Link from "next/link";
 import Image from "next/image";
 import { Disc } from "lucide-react";
 
+/**
+ * Interface för annonsdata. 
+ * Använder strikt typning för att säkerställa att metadata som 'format' och 'is_steelbook'
+ * hanteras korrekt genom hela applikationen.
+ */
 interface AdProps {
   id: string;
   title: string;
@@ -16,11 +21,15 @@ interface AdProps {
 
 export default function AdCard({
   ad,
-  priority = false,
+  priority = false, // Prop för att styra resurs-prioritering
 }: {
   ad: AdProps;
   priority?: boolean;
 }) {
+  /**
+   * Hjälpfunktion för att generera dynamisk styling baserat på filmformat.
+   * Detta förstärker den visuella kategoriseringen av metadata för samlare.
+   */
   const getFormatStyle = (format: string) => {
     switch (format) {
       case "Blu-ray":
@@ -61,7 +70,9 @@ export default function AdCard({
   return (
     <Link
       href={`/ads/${ad.id}`}
+      // WCAG: focus-ring säkerställer tydlig visuell indikering vid tangentbordsnavigation
       className="group flex flex-col h-full focus:outline-none focus:ring-4 focus:ring-blue-500 focus:ring-offset-2 rounded-xl transition-all"
+      // WCAG: aria-label ger skärmläsare en sammanhängande beskrivning av annonsens viktigaste data
       aria-label={`${ad.title}, ${ad.format}, ${ad.price} kronor`}
     >
       <div
@@ -78,19 +89,26 @@ export default function AdCard({
               src={ad.image_url}
               alt={`Omslagsbild för ${ad.title}`}
               fill
+              /**
+               * PRESTANDA-OPTIMERING (LCP):
+               * 'priority' används för att instruera Next.js att ladda bilder med "high fetch priority".
+               * Detta används på de första annonserna i listan för att sänka LCP-tiden (Largest Contentful Paint).
+               */
               priority={priority}
               className="object-cover transition-transform duration-500 group-hover:scale-105"
+              // Sizes hjälper webbläsaren att välja rätt bildstorlek och minska onödig datatrafik
               sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 20vw"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-slate-400">
               <Disc
                 className="h-10 w-10 animate-spin-slow"
-                aria-hidden="true"
+                aria-hidden="true" // Döljer dekorativ ikon för skärmläsare
               />
             </div>
           )}
 
+          {/* Metadata: Visuell indikator för samlarutgåvor (Steelbook) */}
           {ad.is_steelbook && (
             <div className="absolute top-0 left-0 w-full bg-linear-to-b from-black/80 to-transparent p-2">
               <span className="inline-block bg-amber-400 text-amber-950 text-[10px] font-black px-2 py-0.5 rounded shadow-sm uppercase tracking-wider border border-amber-300">
@@ -114,6 +132,7 @@ export default function AdCard({
           </h3>
 
           <div className="flex items-center justify-between mt-auto pt-2 border-t border-slate-200">
+            {/* Metadata: Visning av format-tagg */}
             <span
               className={`text-[10px] font-bold px-1.5 py-0.5 rounded border uppercase tracking-tighter ${style.badge}`}
             >
