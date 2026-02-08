@@ -8,8 +8,6 @@ Applikationen är driftsatt och kan testas via länken nedan.
 
 ## [Live Demo](https://filmtorget-wxyh.vercel.app/)
 
----
-
 ### Projektbeskrivning
 
 Filmtorget är skapat för att lösa problemet med att specifik metadata för samlarfilm ofta saknas på generella köp- och säljsajter. Applikationen låter användare kategorisera annonser baserat på regionskoder, utgåvor (exempelvis Steelbooks) och specifika filmformat. Fokus har legat på att bygga en stabil teknisk infrastruktur för nischad data samt att optimera prestanda och tillgänglighet.
