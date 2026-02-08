@@ -2,8 +2,11 @@
 
 En nischad C2C-marknadsplats för fysisk samlarfilm, utvecklad som examensarbete inom Frontendutveckling.
 
+--
+
+Applikationen är driftsatt och kan testas via länken nedan.
+
 ## [Live Demo](https://filmtorget-wxyh.vercel.app/)
-Applikationen är driftsatt och kan testas här.
 
 ---
 
@@ -38,10 +41,12 @@ I detta skede lagras all metadata (regionskoder, Steelbook-status etc.) struktur
 
 1.  **Klona arkivet** till din lokala maskin.
 2.  **Installera beroenden:**
+
     ```bash
     npm install
     ```
 3.  **Konfigurera miljövariabler:** Skapa en `.env.local`-fil i rotmappen och lägg till följande:
+
     ```env
     NEXT_PUBLIC_SUPABASE_URL=din_url
     NEXT_PUBLIC_SUPABASE_ANON_KEY=din_nyckel
